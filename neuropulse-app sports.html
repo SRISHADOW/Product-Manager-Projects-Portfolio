@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroPulse Cricket — prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0D1310; --surface:#161D19; --surface-2:#1E2622; --pitch:#17251C;
+    --border:rgba(255,255,255,0.09); --border-strong:rgba(255,255,255,0.18);
+    --text:#EAF0EC; --text-dim:#93A39B; --text-faint:#5C6B63;
+    --teal:#35C79A; --teal-dim:rgba(53,199,154,0.14);
+    --amber:#E3A23C; --amber-dim:rgba(227,162,60,0.16);
+    --blue:#5B9FE0; --blue-dim:rgba(91,159,224,0.16);
+    --purple:#A78BFA; --purple-dim:rgba(167,139,250,0.16);
+    --coral:#E2694C; --coral-dim:rgba(226,105,76,0.16);
+    --radius:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; min-height:100dvh; background:
+      radial-gradient(circle at 20% 0%, #14201a 0%, var(--bg) 55%);
+    font-family:'Inter',sans-serif; color:var(--text);
+    display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  h1,h2,h3,.num,.brand{font-family:'Space Grotesk',sans-serif;}
+  .num{font-variant-numeric:tabular-nums;}
+  button{font-family:inherit; cursor:pointer;}
+
+  /* ---- phone chrome ---- */
+  .phone{
+    width:100%; max-width:400px; height:calc(100vh - 24px); height:calc(100dvh - 24px); max-height:820px;
+    background:var(--bg); border-radius:28px;
+    border:1px solid var(--border-strong); position:relative; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.4);
+    display:flex; flex-direction:column;
+  }
+  @media (min-width:480px){ .phone{ border-radius:44px; } }
+  .statusbar{
+    display:flex; justify-content:space-between; padding:16px 26px 6px;
+    font-size:13px; color:var(--text-dim); flex-shrink:0;
+  }
+  .screens{flex:1; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    padding:8px 20px 0; overflow-y:auto; opacity:0; pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .screen.active{opacity:1; pointer-events:auto;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:6px 0 16px; flex-shrink:0;}
+  .topbar h2{font-size:17px; font-weight:500; margin:0; flex:1; padding-right:30px;}
+  .back{width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:14px;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+  .btn{
+    border-radius:10px; border:1px solid var(--border-strong); background:var(--surface-2);
+    color:var(--text); padding:13px 18px; font-size:14px; font-weight:500; text-align:center;
+    transition:background .15s, opacity .15s;
+  }
+  .btn:active{opacity:0.7;}
+  .btn.primary{background:var(--teal); color:#04241a; border-color:var(--teal);}
+  .btn.ghost{background:transparent; border-color:var(--border);}
+  .btn.block{width:100%; display:block;}
+  .btn[disabled]{opacity:0.35; pointer-events:none;}
+  .btn-row{display:flex; gap:10px; margin-top:auto; padding:16px 0 22px;}
+
+  .label{font-size:11.5px; color:var(--text-faint); letter-spacing:.01em;}
+  .muted{color:var(--text-dim); font-size:13px; line-height:1.5;}
+
+  .pill{font-size:11px; padding:2px 9px; border-radius:20px; font-weight:500;}
+  .pill.teal{background:var(--teal-dim); color:var(--teal);}
+  .pill.amber{background:var(--amber-dim); color:var(--amber);}
+  .pill.coral{background:var(--coral-dim); color:var(--coral);}
+  .pill.blue{background:var(--blue-dim); color:var(--blue);}
+
+  /* consent */
+  .consent-row{display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);}
+  .consent-row:last-child{border-bottom:none;}
+  .avatar{width:34px; height:34px; border-radius:50%; background:var(--surface-2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; margin-right:10px;}
+  .toggle{width:42px; height:24px; border-radius:14px; background:var(--surface-2); border:1px solid var(--border-strong); position:relative; flex-shrink:0;}
+  .toggle .knob{width:18px; height:18px; border-radius:50%; background:var(--text-faint); position:absolute; top:2px; left:2px; transition:.15s;}
+  .toggle.on{background:var(--teal-dim); border-color:var(--teal);}
+  .toggle.on .knob{left:21px; background:var(--teal);}
+
+  /* device check */
+  .device-row{display:flex; align-items:center; gap:10px; padding:12px 0; border-bottom:1px solid var(--border);}
+  .device-row:last-child{border-bottom:none;}
+  .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot.teal{background:var(--teal);} .dot.amber{background:var(--amber);} .dot.coral{background:var(--coral);} .dot.purple{background:var(--purple);}
+
+  /* live overview */
+  .metric-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+  .metric{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;}
+  .metric .num{font-size:22px; font-weight:500; margin-top:2px;}
+  .signal-card{margin-bottom:14px;}
+  .alert-item{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:8px; cursor:pointer;}
+  .alert-item.amber{background:var(--amber-dim); color:#f0c589;}
+  .alert-item.blue{background:var(--blue-dim); color:#a9cdf2;}
+  .alert-item.purple{background:var(--purple-dim); color:#cdc0fb;}
+  .alert-item .x{opacity:.7; font-size:13px; flex-shrink:0;}
+  .banner{background:var(--coral-dim); color:var(--coral); font-size:12px; padding:8px 12px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+
+  /* bottom nav */
+  .navbar{display:flex; justify-content:space-around; padding:10px 0 20px; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0;}
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-faint); font-size:9.5px; width:60px;}
+  .navitem.active{color:var(--teal);}
+  .navicon{width:20px; height:20px;}
+
+  /* player list / detail */
+  .player-row{display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;}
+  .player-row:last-child{border-bottom:none;}
+
+  /* summary */
+  .stat-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .stat-row:last-child{border-bottom:none;}
+
+  .empty{display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; margin:auto; padding:40px 10px; color:var(--text-dim);}
+
+  .toast{
+    position:absolute; bottom:90px; left:20px; right:20px; background:var(--surface-2);
+    border:1px solid var(--border-strong); border-radius:10px; padding:10px 14px; font-size:12.5px;
+    opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:5;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .events-toggle{position:absolute; top:14px; right:16px; width:26px; height:26px; border-radius:50%; background:var(--surface); border:1px solid var(--border); color:var(--text-faint); font-size:13px; display:flex; align-items:center; justify-content:center; z-index:6;}
+  .events-panel{position:absolute; inset:0; background:var(--surface); padding:20px; font-size:12px; color:var(--text-dim); overflow-y:auto; z-index:7;}
+  .events-panel h3{font-size:15px; margin:6px 0 12px; color:var(--text); font-family:'Space Grotesk',sans-serif;}
+  .events-panel div.ev{padding:7px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:6px;}
+  .events-panel .close{position:absolute; top:14px; right:16px; width:26px; height:26px; border-radius:50%; background:var(--bg); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;}
+</style>
+</head>
+<body>
+
+<div class="phone" id="phone">
+  <div class="statusbar"><span>9:41</span><span>●●● wifi 100%</span></div>
+  <button class="events-toggle" onclick="toggleEvents()">i</button>
+  <div class="screens" id="screens"></div>
+  <div class="navbar" id="navbar"></div>
+  <div class="toast" id="toast"></div>
+  <div class="events-panel" id="eventsPanel" style="display:none;">
+    <button class="close" onclick="toggleEvents()">✕</button>
+    <h3>Analytics events</h3>
+    <div id="eventsLog"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+const PLAYERS = [
+  {id:'p1', name:'A. Sharma', init:'AS', consent:true},
+  {id:'p2', name:'R. Iyer', init:'RI', consent:true},
+  {id:'p3', name:'D. Fernandes', init:'DF', consent:false},
+];
+const state = {
+  screen:'consent',
+  activePlayer:'p1',
+  navTab:'live',
+  session:{active:false, paused:false, started:null, name:'Nets — Tuesday'},
+  devices:[
+    {name:'Chest strap — AS', status:'connected'},
+    {name:'Chest strap — RI', status:'connected'},
+    {name:'Wrist band — AS', status:'weak'},
+  ],
+  alerts:[
+    {id:'a1', ramp:'amber', player:'A. Sharma', text:'Pressure trending above personal baseline', metric:'Pressure', delta:'+18%', confidence:'Medium', window:'Last 4 min', signal:'Good', cue:'Offer a brief breathing reset between overs', read:false, dismissed:false},
+    {id:'a2', ramp:'blue', player:'R. Iyer', text:'Focus trending above personal baseline', metric:'Focus', delta:'+9%', confidence:'High', window:'Last 6 min', signal:'Good', cue:'No action needed — note the positive trend', read:false, dismissed:false},
+  ],
+  interventions:[],
+  activeAlert:null,
+  metrics:{'p1':{readiness:82, focus:71, pressure:44, recovery:90}, 'p2':{readiness:76, focus:88, pressure:31, recovery:84}},
+  eventLog:[],
+};
+
+function logEvent(name, detail){
+  state.eventLog.unshift({name, detail, t:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
+  renderEvents();
+}
+function toggleEvents(){
+  const p = document.getElementById('eventsPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function renderEvents(){
+  const el = document.getElementById('eventsLog');
+  el.innerHTML = state.eventLog.slice(0,30).map(e => `<div class="ev"><span>${e.name}</span><span>${e.t}</span></div>`).join('') || '<div class="muted">No events yet.</div>';
+}
+
+function go(screen){ state.screen = screen; render(); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+/* ---------------- screens ---------------- */
+function screenConsent(){
+  const rows = PLAYERS.map(p => `
+    <div class="consent-row">
+      <div style="display:flex; align-items:center;">
+        <div class="avatar">${p.init}</div>
+        <div>
+          <div style="font-size:13.5px;">${p.name}</div>
+          <div class="label">Data visibility shared with coach</div>
+        </div>
+      </div>
+      <div class="toggle ${p.consent ? 'on':''}" onclick="toggleConsent('${p.id}')"><div class="knob"></div></div>
+    </div>`).join('');
+  const anyConsent = PLAYERS.some(p=>p.consent);
+  return `
+    <div class="topbar"><h2>Player consent</h2></div>
+    <p class="muted">Before a session begins, each player reviews and grants data visibility. Inferred signals use personal baselines only — nothing is ranked or shared publicly.</p>
+    <div class="card" style="margin-top:6px;">${rows}</div>
+    <div class="btn-row">
+      <button class="btn primary block" ${anyConsent?'':'disabled'} onclick="continueFromConsent()">Continue to setup</button>
+    </div>`;
+}
+function toggleConsent(id){
+  const p = PLAYERS.find(p=>p.id===id); p.consent = !p.consent; render();
+}
+function continueFromConsent(){ logEvent('consent_confirmed'); go('setup'); }
+
+function screenSetup(){
+  const consented = PLAYERS.filter(p=>p.consent);
+  return `
+    <div class="topbar"><h2>Session setup</h2></div>
+    <div class="label" style="margin-bottom:6px;">Session name</div>
+    <div class="card" style="margin-bottom:14px;"><input id="sessionName" value="${state.session.name}" style="background:none; border:none; color:var(--text); font-size:14px; width:100%; outline:none;" oninput="state.session.name=this.value"></div>
+    <div class="label" style="margin-bottom:6px;">Format</div>
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <div class="btn" style="flex:1; background:var(--surface-2); border-color:var(--teal); color:var(--teal);">Nets</div>
+      <div class="btn ghost" style="flex:1;">T20</div>
+      <div class="btn ghost" style="flex:1;">ODI</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Players in session (${consented.length})</div>
+    <div class="card">
+      ${consented.map(p=>`<div class="consent-row" style="border-bottom:1px solid var(--border);"><div style="display:flex; align-items:center;"><div class="avatar">${p.init}</div><div style="font-size:13.5px;">${p.name}</div></div><span class="pill teal">Consented</span></div>`).join('')}
+      ${consented.length===0 ? '<div class="muted">No players have granted consent yet.</div>' : ''}
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('consent')" style="margin-right:auto;">←</button>
+      <button class="btn primary" ${consented.length? '' : 'disabled'} onclick="go('deviceCheck')">Check devices</button>
+    </div>`;
+}
+
+function screenDeviceCheck(){
+  const iconFor = s => s==='connected' ? 'teal' : s==='weak' ? 'amber' : s==='simulated' ? 'purple' : 'coral';
+  const labelFor = s => ({connected:'Connected', weak:'Weak signal', disconnected:'Disconnected', simulated:'Simulated'}[s]);
+  const allOk = state.devices.every(d => d.status==='connected' || d.status==='simulated');
+  return `
+    <div class="topbar"><h2>Device check</h2></div>
+    <p class="muted">Confirm each sensor before starting. Weak or disconnected devices can still be simulated for a demo session.</p>
+    <div class="card" style="margin-top:6px;">
+      ${state.devices.map((d,i)=>`
+        <div class="device-row">
+          <div class="dot ${iconFor(d.status)}"></div>
+          <div style="flex:1;">
+            <div style="font-size:13.5px;">${d.name}</div>
+            <div class="label">${labelFor(d.status)}</div>
+          </div>
+          ${d.status!=='connected' ? `<button class="btn ghost" style="padding:6px 10px; font-size:12px;" onclick="retryDevice(${i})">Retry</button>` : ''}
+        </div>`).join('')}
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('setup')" style="margin-right:auto;">←</button>
+      <button class="btn primary" onclick="startSession()">${allOk ? 'Start session' : 'Start with simulated data'}</button>
+    </div>`;
+}
+function retryDevice(i){
+  const d = state.devices[i];
+  d.status = 'connected';
+  logEvent('device_reconnect_attempt', d.name);
+  render();
+}
+function startSession(){
+  state.devices.forEach(d=>{ if(d.status==='weak' || d.status==='disconnected') d.status='simulated'; });
+  state.session.active = true; state.session.paused = false; state.session.started = new Date();
+  logEvent('session_started', state.session.name);
+  go('live');
+}
+
+function metricsFor(id){ return state.metrics[id] || {readiness:70,focus:70,pressure:40,recovery:80}; }
+
+function screenLive(){
+  const activeAlerts = state.alerts.filter(a=>!a.dismissed);
+  const anyWeak = state.devices.some(d=>d.status==='weak' || d.status==='disconnected');
+  return `
+    <div class="topbar">
+      <h2>Live overview</h2>
+      <button class="btn ghost" style="padding:6px 12px; font-size:12px;" onclick="togglePause()">${state.session.paused ? 'Resume' : 'Pause'}</button>
+    </div>
+    ${anyWeak ? `<div class="banner">⚠ One or more sensors reporting weak signal — inferred metrics may be less reliable.</div>` : ''}
+    ${state.session.paused ? `<div class="banner" style="background:var(--surface-2); color:var(--text-dim);">Session paused — live signal not updating.</div>` : ''}
+    <div class="metric-grid">
+      ${['readiness','focus','pressure','recovery'].map(k=>{
+        const v = metricsFor(state.activePlayer)[k];
+        return `<div class="metric"><div class="label" style="text-transform:capitalize;">${k}</div><div class="num">${v}%</div><div class="label">vs. baseline</div></div>`;
+      }).join('')}
+    </div>
+    <div class="card signal-card" onclick="openPlayer('${state.activePlayer}')" style="cursor:pointer;">
+      <div class="label" style="margin-bottom:6px;">Live feed · tap for player detail</div>
+      <svg width="100%" height="42" viewBox="0 0 300 42"><polyline id="livePoly" points="0,30 25,22 50,26 75,14 100,20 125,10 150,18 175,8 200,16 225,6 250,14 275,10 300,18" fill="none" stroke="var(--teal)" stroke-width="2"/></svg>
+    </div>
+    <div class="label" style="margin:14px 0 8px;">Alerts</div>
+    ${activeAlerts.length===0 ? `<p class="muted">No active alerts. All signals within baseline.</p>` : activeAlerts.map(a=>`
+      <div class="alert-item ${a.ramp}" onclick="openAlert('${a.id}')">
+        <span>${a.text}</span>
+        <span class="x" onclick="event.stopPropagation(); dismissAlert('${a.id}')">✕</span>
+      </div>`).join('')}
+    <div style="text-align:center; padding:6px 0 16px;">
+      <span class="pill blue" style="cursor:pointer;" onclick="state.navTab='alerts'; go('alertsList')">View all insights</span>
+    </div>
+    <div class="btn-row" style="padding-top:0;">
+      <button class="btn ghost block" onclick="endSession()">End session</button>
+    </div>`;
+}
+function togglePause(){
+  state.session.paused = !state.session.paused;
+  logEvent(state.session.paused ? 'session_paused' : 'session_resumed');
+  render();
+}
+function dismissAlert(id){
+  const a = state.alerts.find(a=>a.id===id); a.dismissed = true;
+  logEvent('alert_dismissed', a.text);
+  showToast('Alert dismissed');
+  render();
+}
+function openAlert(id){
+  state.activeAlert = id;
+  const a = state.alerts.find(a=>a.id===id);
+  if(!a.read){ a.read = true; logEvent('alert_viewed', a.text); }
+  go('alertExplain');
+}
+function openPlayer(id){ state.activePlayer = id; go('playerDetail'); }
+
+function screenPlayerDetail(){
+  const p = PLAYERS.find(p=>p.id===state.activePlayer) || PLAYERS[0];
+  const m = metricsFor(p.id);
+  return `
+    <div class="topbar"><button class="back" onclick="go('live')">←</button><h2>${p.name}</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="label" style="margin-bottom:8px;">Signal · last 10 min</div>
+      <svg width="100%" height="70" viewBox="0 0 300 70"><polyline points="0,50 30,40 60,45 90,25 120,35 150,15 180,30 210,10 240,25 270,18 300,30" fill="none" stroke="var(--teal)" stroke-width="2"/></svg>
+    </div>
+    <div class="metric-grid">
+      ${Object.entries(m).map(([k,v])=>`<div class="metric"><div class="label" style="text-transform:capitalize;">${k}</div><div class="num">${v}%</div><div class="label">confidence: medium</div></div>`).join('')}
+    </div>
+    <p class="muted">Inferred from personal baseline, not compared with teammates. No diagnosis or selection judgement is implied.</p>
+    <div class="btn-row"><button class="btn primary block" onclick="go('live')">Back to live overview</button></div>`;
+}
+
+function screenAlertExplain(){
+  const a = state.alerts.find(a=>a.id===state.activeAlert) || state.alerts[0];
+  return `
+    <div class="topbar"><button class="back" onclick="go('live')">←</button><h2>Alert explanation</h2></div>
+    <div class="card" style="background:var(--${a.ramp}-dim); border-color:transparent; margin-bottom:14px;">
+      <div class="label" style="color:inherit; opacity:.8;">${a.player}</div>
+      <div style="font-size:13.5px; font-weight:500; margin-top:4px;">${a.text}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">What changed</div>
+    <p class="muted" style="margin-top:0;">${a.metric} moved ${a.delta} relative to this player's own baseline.</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin:8px 0 16px;">
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Confidence</div><div style="font-size:13px; font-weight:500; margin-top:4px;">${a.confidence}</div></div>
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Window</div><div style="font-size:13px; font-weight:500; margin-top:4px;">${a.window}</div></div>
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Signal</div><div style="font-size:13px; font-weight:500; margin-top:4px; color:var(--teal);">${a.signal}</div></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Suggested cue</div>
+    <div class="card" style="margin-bottom:14px;">${a.cue}</div>
+    <p class="muted" style="font-size:11px;">This is an inferred signal, not a diagnosis or selection input.</p>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="dismissAlert('${a.id}'); go('live')">Dismiss</button>
+      <button class="btn primary" onclick="logIntervention('${a.id}')">Log intervention</button>
+    </div>`;
+}
+
+function logIntervention(alertId){
+  const a = state.alerts.find(a=>a.id===alertId);
+  state.interventions.push({player:a.player, cue:a.cue, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  logEvent('intervention_logged', a.cue);
+  go('interventionLogged');
+}
+
+function screenInterventionLogged(){
+  const last = state.interventions[state.interventions.length-1];
+  return `
+    <div class="topbar"><h2>Intervention logged</h2></div>
+    <div class="empty" style="margin-top:10px;">
+      <div style="width:52px; height:52px; border-radius:50%; background:var(--teal-dim); display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--teal);">✓</div>
+      <p style="margin:10px 0 2px; color:var(--text); font-size:14px;">Logged for ${last?.player || ''}</p>
+      <p class="muted">${last?.cue || ''}</p>
+    </div>
+    <div class="btn-row"><button class="btn primary block" onclick="go('live')">Back to live overview</button></div>`;
+}
+
+function screenAlertsList(){
+  return `
+    <div class="topbar"><h2>Alerts</h2></div>
+    ${state.alerts.length===0 ? `<div class="empty">No alerts this session.</div>` :
+      state.alerts.map(a=>`
+        <div class="alert-item ${a.ramp}" style="${a.dismissed?'opacity:.45;':''}" onclick="openAlert('${a.id}')">
+          <span>${a.player} — ${a.text}</span>
+          ${a.dismissed ? '<span class="label">Dismissed</span>' : (a.read ? '<span class="label">Read</span>' : '<span class="pill amber">New</span>')}
+        </div>`).join('')}
+    `;
+}
+
+function screenPlayersList(){
+  return `
+    <div class="topbar"><h2>Players</h2></div>
+    ${PLAYERS.filter(p=>p.consent).map(p=>`
+      <div class="player-row" onclick="openPlayer('${p.id}')">
+        <div class="avatar">${p.init}</div>
+        <div style="flex:1;">
+          <div style="font-size:13.5px;">${p.name}</div>
+          <div class="label">Readiness ${metricsFor(p.id).readiness}% · Recovery ${metricsFor(p.id).recovery}%</div>
+        </div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>`).join('')}
+    ${PLAYERS.some(p=>!p.consent) ? `<p class="muted" style="margin-top:14px;">${PLAYERS.filter(p=>!p.consent).length} player(s) not shown — consent not granted.</p>` : ''}`;
+}
+
+function screenSettings(){
+  return `
+    <div class="topbar"><h2>Settings</h2></div>
+    <div class="label" style="margin-bottom:6px;">Devices</div>
+    <div class="card" style="margin-bottom:16px;">
+      ${state.devices.map(d=>`<div class="device-row"><div class="dot ${d.status==='connected'?'teal':d.status==='simulated'?'purple':d.status==='weak'?'amber':'coral'}"></div><div style="flex:1; font-size:13px;">${d.name}</div><span class="label" style="text-transform:capitalize;">${d.status}</span></div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Player consent</div>
+    <div class="card">
+      ${PLAYERS.map(p=>`<div class="consent-row"><div style="display:flex; align-items:center;"><div class="avatar">${p.init}</div><div style="font-size:13.5px;">${p.name}</div></div><div class="toggle ${p.consent?'on':''}" onclick="toggleConsent('${p.id}')"><div class="knob"></div></div></div>`).join('')}
+    </div>`;
+}
+
+function endSession(){
+  logEvent('session_ended', state.session.name);
+  state.session.active = false;
+  go('summary');
+}
+function screenSummary(){
+  const dismissedCount = state.alerts.filter(a=>a.dismissed).length;
+  return `
+    <div class="topbar"><h2>Session summary</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-size:15px; font-weight:500;">${state.session.name}</div>
+      <div class="label" style="margin-top:2px;">${PLAYERS.filter(p=>p.consent).length} players · ended ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Alerts raised</span><span>${state.alerts.length}</span></div>
+      <div class="stat-row"><span>Alerts dismissed</span><span>${dismissedCount}</span></div>
+      <div class="stat-row"><span>Interventions logged</span><span>${state.interventions.length}</span></div>
+    </div>
+    ${state.interventions.length ? `
+      <div class="label" style="margin-bottom:6px;">Interventions</div>
+      <div class="card" style="margin-bottom:14px;">
+        ${state.interventions.map(iv=>`<div class="stat-row"><span>${iv.player}</span><span class="label">${iv.time}</span></div>`).join('')}
+      </div>` : ''}
+    <div class="btn-row"><button class="btn primary block" onclick="newSession()">Start new session</button></div>`;
+}
+function newSession(){
+  state.alerts.forEach(a=>{a.dismissed=false; a.read=false;});
+  state.interventions = [];
+  go('setup');
+}
+
+/* ---------------- render ---------------- */
+const SCREENS = {
+  consent: screenConsent, setup: screenSetup, deviceCheck: screenDeviceCheck,
+  live: screenLive, playerDetail: screenPlayerDetail, alertExplain: screenAlertExplain,
+  interventionLogged: screenInterventionLogged, alertsList: screenAlertsList,
+  playersList: screenPlayersList, settings: screenSettings, summary: screenSummary,
+};
+const NAV = [
+  {id:'live', label:'Live', icon:'live', screen:'live'},
+  {id:'players', label:'Players', icon:'players', screen:'playersList'},
+  {id:'alerts', label:'Alerts', icon:'alerts', screen:'alertsList'},
+  {id:'settings', label:'Settings', icon:'settings', screen:'settings'},
+];
+const ICONS = {
+  live: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>',
+  players: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3-6 7-6s7 2.7 7 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14.2c2.6.3 4.5 2.3 4.5 5.8"/></svg>',
+  alerts: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3a6 6 0 0 0-6 6c0 5-2 6-2 6h16s-2-1-2-6a6 6 0 0 0-6-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+  settings: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.3-.9c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.6z"/></svg>',
+};
+function render(){
+  const showNav = ['live','playersList','alertsList','settings'].includes(state.screen);
+  const screensEl = document.getElementById('screens');
+  screensEl.innerHTML = Object.keys(SCREENS).map(key =>
+    `<div class="screen ${state.screen===key?'active':''}" data-screen="${key}">${SCREENS[key]()}</div>`
+  ).join('');
+  const navbarEl = document.getElementById('navbar');
+  navbarEl.style.display = showNav ? 'flex' : 'none';
+  navbarEl.innerHTML = NAV.map(n => `
+    <div class="navitem ${state.screen===n.screen ? 'active':''}" onclick="go('${n.screen}')">
+      ${ICONS[n.icon]}<span>${n.label}</span>
+    </div>`).join('');
+}
+renderEvents();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — SME cash-flow app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F0E6; --surface:#FFFFFF; --ink:#1B2430; --ink-soft:#2C3542;
+    --border:rgba(27,36,48,0.12); --border-strong:rgba(27,36,48,0.22);
+    --text:#1B2430; --text-dim:#5B6472; --text-faint:#8A9099;
+    --marigold:#E2A73E; --marigold-dim:#FBEFD8; --marigold-ink:#6B4C0E;
+    --teal:#2E7D6B; --teal-dim:#E1F0EC; --teal-ink:#164A3E;
+    --rust:#C1512E; --rust-dim:#FBE7E0; --rust-ink:#6E2812;
+    --slate-dim:#EAEDF1;
+    --radius:12px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; min-height:100dvh; background:var(--paper);
+    font-family:'Inter',sans-serif; color:var(--text);
+    display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  h1,h2,h3,.num,.serif{font-family:'Newsreader',serif;}
+  .num{font-variant-numeric:tabular-nums; font-weight:500;}
+  button{font-family:inherit; cursor:pointer;}
+
+  .phone{
+    width:100%; max-width:400px; height:calc(100vh - 24px); height:calc(100dvh - 24px); max-height:820px;
+    background:var(--paper); border-radius:28px;
+    border:1px solid var(--border-strong); position:relative; overflow:hidden;
+    box-shadow:0 20px 50px rgba(27,36,48,0.18);
+    display:flex; flex-direction:column;
+  }
+  @media (min-width:480px){ .phone{ border-radius:40px; } }
+  .statusbar{display:flex; justify-content:space-between; padding:16px 24px 4px; font-size:13px; color:var(--text-dim); flex-shrink:0;}
+  .screens{flex:1; position:relative; overflow:hidden;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; padding:6px 20px 0; overflow-y:auto; opacity:0; pointer-events:none; transition:opacity .18s ease;}
+  .screen.active{opacity:1; pointer-events:auto;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:8px 0 14px; flex-shrink:0;}
+  .topbar h2{font-size:18px; font-weight:500; margin:0; flex:1; padding-right:30px;}
+  .back{width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:14px;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+  .btn{border-radius:9px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); padding:12px 18px; font-size:13.5px; font-weight:500; text-align:center; transition:opacity .15s;}
+  .btn:active{opacity:.65;}
+  .btn.primary{background:var(--ink); color:var(--paper); border-color:var(--ink);}
+  .btn.marigold{background:var(--marigold); color:var(--marigold-ink); border-color:var(--marigold);}
+  .btn.ghost{background:transparent;}
+  .btn.block{width:100%; display:block;}
+  .btn[disabled]{opacity:.35; pointer-events:none;}
+  .btn-row{display:flex; gap:10px; margin-top:auto; padding:16px 0 22px;}
+
+  .label{font-size:11.5px; color:var(--text-faint); letter-spacing:.01em;}
+  .muted{color:var(--text-dim); font-size:13px; line-height:1.55; margin:0;}
+
+  .pill{font-size:11px; padding:2px 9px; border-radius:20px; font-weight:500;}
+  .pill.teal{background:var(--teal-dim); color:var(--teal-ink);}
+  .pill.rust{background:var(--rust-dim); color:var(--rust-ink);}
+  .pill.marigold{background:var(--marigold-dim); color:var(--marigold-ink);}
+  .pill.slate{background:var(--slate-dim); color:var(--text-dim);}
+
+  .row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); cursor:pointer;}
+  .row:last-child{border-bottom:none;}
+  .row .meta{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+
+  .banner{font-size:12.5px; padding:10px 12px; border-radius:10px; margin-bottom:12px; display:flex; align-items:flex-start; gap:8px; line-height:1.4;}
+  .banner.rust{background:var(--rust-dim); color:var(--rust-ink);}
+  .banner.teal{background:var(--teal-dim); color:var(--teal-ink);}
+
+  .navbar{display:flex; justify-content:space-around; padding:10px 0 20px; border-top:1px solid var(--border); background:var(--paper); flex-shrink:0;}
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-faint); font-size:9.5px; width:56px;}
+  .navitem.active{color:var(--ink);}
+  .navicon{width:19px; height:19px;}
+
+  .stat-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .stat-row:last-child{border-bottom:none;}
+
+  .toggle{width:42px; height:24px; border-radius:14px; background:var(--slate-dim); border:1px solid var(--border-strong); position:relative; flex-shrink:0;}
+  .toggle .knob{width:18px; height:18px; border-radius:50%; background:var(--text-faint); position:absolute; top:2px; left:2px; transition:.15s;}
+  .toggle.on{background:var(--teal-dim); border-color:var(--teal);}
+  .toggle.on .knob{left:21px; background:var(--teal);}
+
+  .empty{display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; margin:auto; padding:40px 10px; color:var(--text-dim);}
+  .toast{position:absolute; bottom:90px; left:20px; right:20px; background:var(--ink); color:var(--paper); border-radius:10px; padding:10px 14px; font-size:12.5px; opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:5;}
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  input[type=range]{width:100%; accent-color:var(--marigold);}
+  .events-toggle{position:absolute; top:14px; right:16px; width:26px; height:26px; border-radius:50%; background:var(--surface); border:1px solid var(--border); color:var(--text-faint); font-size:13px; display:flex; align-items:center; justify-content:center; z-index:6;}
+  .events-panel{position:absolute; inset:0; background:var(--surface); padding:20px; font-size:12px; color:var(--text-dim); overflow-y:auto; z-index:7;}
+  .events-panel h3{font-size:15px; margin:6px 0 12px; color:var(--text); font-family:'Newsreader',serif;}
+  .events-panel div.ev{padding:7px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:6px;}
+  .events-panel .close{position:absolute; top:14px; right:16px; width:26px; height:26px; border-radius:50%; background:var(--paper); border:1px solid var(--border); display:flex; align-items:center; justify-content:center;}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+  <div class="statusbar"><span>9:41</span><span>●●● wifi 100%</span></div>
+  <button class="events-toggle" onclick="toggleEvents()">i</button>
+  <div class="screens" id="screens"></div>
+  <div class="navbar" id="navbar"></div>
+  <div class="toast" id="toast"></div>
+  <div class="events-panel" id="eventsPanel" style="display:none;">
+    <button class="close" onclick="toggleEvents()">✕</button>
+    <h3>Analytics events</h3>
+    <div id="eventsLog"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const state = {
+  screen:'onboardGSTIN',
+  navTab:'dashboard',
+  business:{name:'Meridian Textiles', gstin:'', bankLinked:false, gstinVerified:false},
+  scenario:'realistic',
+  activeInvoice:null,
+  activeReminder:null,
+  eventLog:[],
+  invoices:[
+    {id:'INV-2201', party:'Kavya Fabrics Pvt Ltd', amount:186000, date:'3 Sep', status:'matched', note:'Matches GSTR-2B, ITC eligible'},
+    {id:'INV-2198', party:'Orion Dyeing Works', amount:94500, date:'1 Sep', status:'mismatched', note:'Amount differs from GSTR-2B by ₹4,200'},
+    {id:'INV-2190', party:'Bansal Yarns Co.', amount:212000, date:'28 Aug', status:'pending', note:'Not yet uploaded to GSTR-2B by supplier'},
+    {id:'INV-2185', party:'Sundar Logistics', amount:38200, date:'26 Aug', status:'matched', note:'Matches GSTR-2B, ITC eligible'},
+    {id:'INV-2179', party:'Kavya Fabrics Pvt Ltd', amount:65000, date:'22 Aug', status:'matched', note:'Matches GSTR-2B, ITC eligible'},
+  ],
+  receivables:[
+    {id:'R-104', party:'Highline Retail Group', amount:312000, dueDate:'2 Sep', daysOver:10, reminders:1},
+    {id:'R-101', party:'Coral Garments', amount:148000, dueDate:'6 Sep', daysOver:6, reminders:0},
+    {id:'R-098', party:'Vantage Apparel', amount:76500, dueDate:'11 Sep', daysOver:1, reminders:0},
+  ],
+};
+
+function logEvent(name, detail){
+  state.eventLog.unshift({name, detail, t:new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})});
+  renderEvents();
+}
+function toggleEvents(){ const p=document.getElementById('eventsPanel'); p.style.display = p.style.display==='none'?'block':'none'; }
+function renderEvents(){
+  const el = document.getElementById('eventsLog');
+  el.innerHTML = state.eventLog.slice(0,30).map(e=>`<div class="ev"><span>${e.name}</span><span>${e.t}</span></div>`).join('') || '<div class="muted">No events yet.</div>';
+}
+function go(s){ state.screen = s; render(); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._tm); showToast._tm = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+const inr = n => '₹' + n.toLocaleString('en-IN');
+
+/* ---------------- onboarding ---------------- */
+function screenOnboardGSTIN(){
+  return `
+    <div class="topbar"><h2 class="serif">Set up your business</h2></div>
+    <p class="muted" style="margin-bottom:16px;">Enter your GSTIN so we can pull invoice and return data automatically. We only read data — nothing is filed on your behalf without your review.</p>
+    <div class="label" style="margin-bottom:6px;">GSTIN</div>
+    <div class="card" style="margin-bottom:16px;">
+      <input id="gstinInput" placeholder="27AAECM1234F1Z5" style="background:none; border:none; font-size:14px; width:100%; outline:none; color:var(--text); letter-spacing:.03em;" oninput="state.business.gstin=this.value.toUpperCase()">
+    </div>
+    <div class="btn-row">
+      <button class="btn primary block" onclick="verifyGSTIN()">Verify and continue</button>
+    </div>`;
+}
+function verifyGSTIN(){
+  const val = document.getElementById('gstinInput').value.trim();
+  if(!val){ showToast('Enter a GSTIN to continue'); return; }
+  state.business.gstin = val.toUpperCase();
+  state.business.gstinVerified = true;
+  logEvent('gstin_verified', state.business.gstin);
+  go('onboardBank');
+}
+
+function screenOnboardBank(){
+  return `
+    <div class="topbar"><button class="back" onclick="go('onboardGSTIN')">←</button><h2 class="serif">Connect your bank</h2></div>
+    <p class="muted" style="margin-bottom:16px;">Linking your current account lets Ledger read transactions for forecasting, through the RBI Account Aggregator framework. Statements are read-only.</p>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="row"><div><div style="font-size:13.5px;">HDFC Bank — Current a/c</div><div class="meta">••••4821</div></div><span class="pill teal">Available</span></div>
+      <div class="row"><div><div style="font-size:13.5px;">ICICI Bank — Current a/c</div><div class="meta">••••1190</div></div><span class="pill slate">Available</span></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="skipBank()">Skip for now</button>
+      <button class="btn primary" onclick="linkBank()">Link HDFC account</button>
+    </div>`;
+}
+function linkBank(){
+  state.business.bankLinked = true;
+  logEvent('bank_account_linked', 'HDFC ••••4821');
+  showToast('Bank account linked');
+  go('dashboard');
+}
+function skipBank(){ logEvent('bank_link_skipped'); go('dashboard'); }
+
+/* ---------------- dashboard ---------------- */
+function forecastNumbers(){
+  const base = {optimistic:{low:1}, realistic:{low:0}, conservative:{low:-1}}[state.scenario];
+  const shortfall = state.scenario === 'conservative';
+  return {
+    balance: 482300,
+    in30: state.scenario==='optimistic' ? 712000 : state.scenario==='realistic' ? 620000 : 498000,
+    out30: 540000,
+    shortfallDay: shortfall ? 'day 22' : null,
+  };
+}
+function screenDashboard(){
+  const f = forecastNumbers();
+  const net = f.in30 - f.out30;
+  return `
+    <div class="topbar"><h2 class="serif">${state.business.name}</h2></div>
+    ${f.shortfallDay ? `<div class="banner rust">⚠ Projected cash shortfall around ${f.shortfallDay} of this forecast if the conservative scenario holds. Consider following up on overdue receivables.</div>` : `<div class="banner teal">Cash position stays positive through the 30-day forecast.</div>`}
+    <div class="card" style="margin-bottom:14px;">
+      <div class="label">Current balance</div>
+      <div class="num" style="font-size:28px;">${inr(f.balance)}</div>
+      <svg width="100%" height="52" viewBox="0 0 300 52" style="margin-top:8px;">
+        <polyline points="0,30 30,26 60,32 90,22 120,28 150,18 180,${net<0?'34':'22'} 210,${net<0?'40':'16'} 240,${net<0?'44':'20'} 270,${net<0?'46':'14'} 300,${net<0?'48':'10'}" fill="none" stroke="${net<0?'var(--rust)':'var(--teal)'}" stroke-width="2"/>
+      </svg>
+      <div class="label" style="margin-top:4px;">30-day projection · ${state.scenario} scenario</div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+      <div class="card"><div class="label">Expected in</div><div class="num" style="font-size:17px; color:var(--teal-ink);">${inr(f.in30)}</div></div>
+      <div class="card"><div class="label">Expected out</div><div class="num" style="font-size:17px; color:var(--rust-ink);">${inr(f.out30)}</div></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Needs attention</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="row" onclick="go('invoices')"><div><div style="font-size:13px;">1 invoice mismatched with GSTR-2B</div><div class="meta">Review reconciliation</div></div><span style="color:var(--text-faint);">›</span></div>
+      <div class="row" onclick="go('payments')"><div><div style="font-size:13px;">${state.receivables.length} payments overdue</div><div class="meta">${inr(state.receivables.reduce((s,r)=>s+r.amount,0))} outstanding</div></div><span style="color:var(--text-faint);">›</span></div>
+    </div>
+    <div class="btn-row" style="padding-top:0;">
+      <button class="btn marigold block" onclick="go('forecast')">Open full forecast</button>
+    </div>`;
+}
+
+/* ---------------- invoices ---------------- */
+function pillFor(status){
+  return status==='matched' ? '<span class="pill teal">Matched</span>' :
+         status==='mismatched' ? '<span class="pill rust">Mismatch</span>' :
+         '<span class="pill slate">Pending</span>';
+}
+function screenInvoices(){
+  return `
+    <div class="topbar"><h2 class="serif">Invoices</h2></div>
+    <p class="muted" style="margin-bottom:12px;">Reconciled automatically against your GSTR-2B each time it refreshes.</p>
+    <div class="card">
+      ${state.invoices.map(inv=>`
+        <div class="row" onclick="openInvoice('${inv.id}')">
+          <div>
+            <div style="font-size:13.5px;">${inv.party}</div>
+            <div class="meta">${inv.id} · ${inv.date} · ${inr(inv.amount)}</div>
+          </div>
+          ${pillFor(inv.status)}
+        </div>`).join('')}
+    </div>`;
+}
+function openInvoice(id){
+  state.activeInvoice = id;
+  logEvent('invoice_viewed', id);
+  go('invoiceDetail');
+}
+function screenInvoiceDetail(){
+  const inv = state.invoices.find(i=>i.id===state.activeInvoice) || state.invoices[0];
+  return `
+    <div class="topbar"><button class="back" onclick="go('invoices')">←</button><h2 class="serif">${inv.id}</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Supplier</span><span>${inv.party}</span></div>
+      <div class="stat-row"><span>Amount</span><span class="num">${inr(inv.amount)}</span></div>
+      <div class="stat-row"><span>Invoice date</span><span>${inv.date}</span></div>
+      <div class="stat-row"><span>Reconciliation</span>${pillFor(inv.status)}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Details</div>
+    <p class="muted" style="margin-bottom:16px;">${inv.note}</p>
+    <div class="btn-row">
+      ${inv.status==='mismatched' ? `<button class="btn primary block" onclick="flagInvoice('${inv.id}')">Flag to supplier</button>` :
+        inv.status==='pending' ? `<button class="btn ghost block" onclick="remindSupplier('${inv.id}')">Remind supplier to upload</button>` :
+        `<button class="btn ghost block" onclick="go('invoices')">Back to invoices</button>`}
+    </div>`;
+}
+function flagInvoice(id){ logEvent('invoice_flagged', id); showToast('Flagged to supplier'); go('invoices'); }
+function remindSupplier(id){ logEvent('supplier_upload_reminder_sent', id); showToast('Reminder sent'); go('invoices'); }
+
+/* ---------------- payments ---------------- */
+function screenPayments(){
+  const total = state.receivables.reduce((s,r)=>s+r.amount,0);
+  return `
+    <div class="topbar"><h2 class="serif">Payments due</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="label">Total outstanding</div>
+      <div class="num" style="font-size:24px;">${inr(total)}</div>
+    </div>
+    <div class="card">
+      ${state.receivables.map(r=>`
+        <div class="row" onclick="openReminder('${r.id}')">
+          <div>
+            <div style="font-size:13.5px;">${r.party}</div>
+            <div class="meta">Due ${r.dueDate} · ${r.daysOver} days overdue · ${inr(r.amount)}</div>
+          </div>
+          <span class="pill rust">${r.daysOver}d</span>
+        </div>`).join('')}
+    </div>`;
+}
+function openReminder(id){ state.activeReminder = id; go('reminderDetail'); }
+function screenReminderDetail(){
+  const r = state.receivables.find(r=>r.id===state.activeReminder) || state.receivables[0];
+  return `
+    <div class="topbar"><button class="back" onclick="go('payments')">←</button><h2 class="serif">${r.party}</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Amount due</span><span class="num">${inr(r.amount)}</span></div>
+      <div class="stat-row"><span>Due date</span><span>${r.dueDate}</span></div>
+      <div class="stat-row"><span>Days overdue</span><span>${r.daysOver}</span></div>
+      <div class="stat-row"><span>Reminders sent</span><span>${r.reminders}</span></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Send a reminder</div>
+    <div class="card" style="margin-bottom:16px;">A polite payment reminder for ${inr(r.amount)}, overdue since ${r.dueDate}, will be sent by WhatsApp and email.</div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="markPaid('${r.id}')">Mark as paid</button>
+      <button class="btn primary" onclick="sendReminder('${r.id}')">Send reminder</button>
+    </div>`;
+}
+function sendReminder(id){
+  const r = state.receivables.find(r=>r.id===id); r.reminders += 1;
+  logEvent('payment_reminder_sent', id); showToast('Reminder sent'); render();
+}
+function markPaid(id){
+  state.receivables = state.receivables.filter(r=>r.id!==id);
+  logEvent('receivable_marked_paid', id); showToast('Marked as paid');
+  go('payments');
+}
+
+/* ---------------- forecast ---------------- */
+function screenForecast(){
+  const f = forecastNumbers();
+  return `
+    <div class="topbar"><button class="back" onclick="go('dashboard')">←</button><h2 class="serif">Cash flow forecast</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <svg width="100%" height="90" viewBox="0 0 300 90">
+        <polyline points="0,${f.shortfallDay?'40':'55'} 40,${f.shortfallDay?'46':'48'} 80,${f.shortfallDay?'55':'40'} 120,${f.shortfallDay?'62':'34'} 160,${f.shortfallDay?'70':'28'} 200,${f.shortfallDay?'76':'22'} 240,${f.shortfallDay?'80':'16'} 300,${f.shortfallDay?'84':'10'}" fill="none" stroke="${f.shortfallDay?'var(--rust)':'var(--teal)'}" stroke-width="2.4"/>
+        <line x1="0" y1="60" x2="300" y2="60" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="3 3"/>
+      </svg>
+      <div class="label" style="margin-top:6px;">Dashed line marks zero balance</div>
+    </div>
+    <div class="label" style="margin-bottom:8px;">Scenario</div>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      ${['optimistic','realistic','conservative'].map(s=>`<div class="btn ${state.scenario===s?'primary':'ghost'}" style="flex:1; padding:9px 4px; font-size:12px;" onclick="setScenario('${s}')">${s[0].toUpperCase()+s.slice(1)}</div>`).join('')}
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Expected inflow (30d)</span><span class="num">${inr(f.in30)}</span></div>
+      <div class="stat-row"><span>Expected outflow (30d)</span><span class="num">${inr(f.out30)}</span></div>
+      <div class="stat-row"><span>Net position</span><span class="num" style="color:${f.in30-f.out30<0?'var(--rust-ink)':'var(--teal-ink)'}">${inr(f.in30-f.out30)}</span></div>
+    </div>
+    ${f.shortfallDay ? `<p class="muted">This scenario assumes overdue receivables are not collected. Sending reminders on your 3 overdue payments could close most of the gap.</p>` : `<p class="muted">This scenario assumes your current receivables are collected close to their due dates.</p>`}
+    <div class="btn-row"><button class="btn ghost block" onclick="go('payments')">Review overdue payments</button></div>`;
+}
+function setScenario(s){ state.scenario = s; logEvent('forecast_scenario_changed', s); render(); }
+
+/* ---------------- reports ---------------- */
+function screenReports(){
+  return `
+    <div class="topbar"><h2 class="serif">GST reports</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Output tax (sales)</span><span class="num">${inr(84200)}</span></div>
+      <div class="stat-row"><span>Input tax credit</span><span class="num">${inr(61500)}</span></div>
+      <div class="stat-row"><span>Net GST payable</span><span class="num" style="color:var(--rust-ink);">${inr(22700)}</span></div>
+    </div>
+    <p class="muted" style="margin-bottom:14px;">Based on reconciled invoices for the current return period. 1 invoice is still pending supplier upload and is excluded from input tax credit until matched.</p>
+    <div class="btn-row"><button class="btn ghost block" onclick="downloadSummary()">Download GSTR-3B summary</button></div>`;
+}
+function downloadSummary(){ logEvent('gstr3b_summary_downloaded'); showToast('Summary ready to share with your CA'); }
+
+/* ---------------- settings ---------------- */
+function screenSettings(){
+  return `
+    <div class="topbar"><h2 class="serif">Settings</h2></div>
+    <div class="label" style="margin-bottom:6px;">Connections</div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="row"><div><div style="font-size:13.5px;">GSTIN</div><div class="meta">${state.business.gstin || 'Not set'}</div></div><span class="pill ${state.business.gstinVerified?'teal':'slate'}">${state.business.gstinVerified?'Verified':'Unverified'}</span></div>
+      <div class="row"><div><div style="font-size:13.5px;">Bank account</div><div class="meta">HDFC ••••4821</div></div><div class="toggle ${state.business.bankLinked?'on':''}" onclick="toggleBank()"><div class="knob"></div></div></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Notifications</div>
+    <div class="card">
+      <div class="row"><div style="font-size:13px;">Cash shortfall alerts</div><div class="toggle on"><div class="knob"></div></div></div>
+      <div class="row"><div style="font-size:13px;">Reconciliation mismatches</div><div class="toggle on"><div class="knob"></div></div></div>
+      <div class="row"><div style="font-size:13px;">Payment overdue reminders</div><div class="toggle on"><div class="knob"></div></div></div>
+    </div>`;
+}
+function toggleBank(){ state.business.bankLinked = !state.business.bankLinked; logEvent('bank_toggle', state.business.bankLinked); render(); }
+
+/* ---------------- render ---------------- */
+const SCREENS = {
+  onboardGSTIN: screenOnboardGSTIN, onboardBank: screenOnboardBank,
+  dashboard: screenDashboard, invoices: screenInvoices, invoiceDetail: screenInvoiceDetail,
+  payments: screenPayments, reminderDetail: screenReminderDetail,
+  forecast: screenForecast, reports: screenReports, settings: screenSettings,
+};
+const NAV = [
+  {id:'dashboard', label:'Dashboard', icon:'dash', screen:'dashboard'},
+  {id:'invoices', label:'Invoices', icon:'inv', screen:'invoices'},
+  {id:'payments', label:'Payments', icon:'pay', screen:'payments'},
+  {id:'reports', label:'Reports', icon:'rep', screen:'reports'},
+  {id:'settings', label:'Settings', icon:'set', screen:'settings'},
+];
+const ICONS = {
+  dash: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 13h4v7H3zM10 9h4v11h-4zM17 5h4v15h-4z"/></svg>',
+  inv: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+  pay: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5c0-1.4 1.3-2.5 3-2.5s3 1 3 2.2c0 3-6 1.3-6 4.3 0 1.3 1.3 2.5 3 2.5s3-1 3-2.3"/></svg>',
+  rep: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h6M9 16h6M9 8h3"/></svg>',
+  set: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.3-.9c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.6z"/></svg>',
+};
+function render(){
+  const showNav = NAV.some(n=>n.screen===state.screen) || ['invoiceDetail','reminderDetail','forecast'].includes(state.screen);
+  const onboarding = state.screen==='onboardGSTIN' || state.screen==='onboardBank';
+  const screensEl = document.getElementById('screens');
+  screensEl.innerHTML = Object.keys(SCREENS).map(key => `<div class="screen ${state.screen===key?'active':''}">${SCREENS[key]()}</div>`).join('');
+  const navbarEl = document.getElementById('navbar');
+  navbarEl.style.display = onboarding ? 'none' : 'flex';
+  const activeTab = ['invoiceDetail'].includes(state.screen) ? 'invoices' : ['reminderDetail'].includes(state.screen) ? 'payments' : ['forecast'].includes(state.screen) ? 'dashboard' : state.screen;
+  navbarEl.innerHTML = NAV.map(n=>`<div class="navitem ${activeTab===n.screen?'active':''}" onclick="go('${n.screen}')">${ICONS[n.icon]}<span>${n.label}</span></div>`).join('');
+}
+renderEvents();
+render();
+</script>
+</body>
+</html>

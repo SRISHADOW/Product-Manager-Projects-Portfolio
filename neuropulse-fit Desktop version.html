@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroPulse Fit — Brain &amp; Heart coach for your training</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A100C; --surface:#131B16; --surface-2:#1B2620; --surface-3:#233028;
+    --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.16);
+    --text:#EAF1EC; --text-dim:#95A69C; --text-faint:#5A6B61;
+    --teal:#33C793; --teal-dim:rgba(51,199,147,0.14);
+    --brain:#9B87F5; --brain-dim:rgba(155,135,245,0.15);
+    --heart:#F2637A; --heart-dim:rgba(242,99,122,0.15);
+    --amber:#E3A23C; --amber-dim:rgba(227,162,60,0.15);
+    --blue:#5B9FE0; --blue-dim:rgba(91,159,224,0.15);
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; min-height:100dvh;
+    background:radial-gradient(circle at 18% 0%, #101c15 0%, var(--bg) 55%);
+    font-family:'Inter',sans-serif; color:var(--text);
+    display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  h1,h2,h3,.num,.brand{font-family:'Space Grotesk',sans-serif;}
+  .num{font-variant-numeric:tabular-nums;}
+  button{font-family:inherit; cursor:pointer;}
+  ::selection{background:var(--teal-dim);}
+
+  /* ---------------- top-level mode switch ---------------- */
+  .modebar{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:50;
+    display:flex; gap:4px; background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:100px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .modebar button{
+    border:none; background:transparent; color:var(--text-dim); font-size:12.5px; font-weight:500;
+    padding:8px 16px; border-radius:100px; transition:.15s;
+  }
+  .modebar button.active{background:var(--teal); color:#04241a;}
+
+  /* ================= APP (phone / dashboard) ================= */
+  .app-wrap{display:none; width:100%; height:100%; align-items:center; justify-content:center;}
+  .app-wrap.active{display:flex;}
+
+  .phone{
+    width:100%; max-width:400px; height:calc(100vh - 24px); height:calc(100dvh - 24px); max-height:840px;
+    background:var(--bg); border-radius:30px;
+    border:1px solid var(--border-strong); position:relative; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+    display:flex; flex-direction:column;
+  }
+  @media (min-width:480px){ .phone{ border-radius:44px; } }
+  .statusbar{
+    display:flex; justify-content:space-between; padding:16px 26px 6px;
+    font-size:13px; color:var(--text-dim); flex-shrink:0;
+  }
+  .screens{flex:1; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    padding:8px 20px 0; overflow-y:auto; opacity:0; pointer-events:none;
+    transition:opacity .18s ease;
+  }
+  .screen.active{opacity:1; pointer-events:auto;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:6px 0 16px; flex-shrink:0;}
+  .topbar h2{font-size:17px; font-weight:600; margin:0; flex:1; padding-right:30px;}
+  .back{width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:14px; flex-shrink:0;}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+  .btn{
+    border-radius:11px; border:1px solid var(--border-strong); background:var(--surface-2);
+    color:var(--text); padding:13px 18px; font-size:14px; font-weight:500; text-align:center;
+    transition:background .15s, opacity .15s;
+  }
+  .btn:active{opacity:0.7;}
+  .btn.primary{background:var(--teal); color:#04241a; border-color:var(--teal);}
+  .btn.ghost{background:transparent; border-color:var(--border);}
+  .btn.block{width:100%; display:block;}
+  .btn[disabled]{opacity:0.35; pointer-events:none;}
+  .btn-row{display:flex; gap:10px; margin-top:auto; padding:16px 0 22px;}
+
+  .label{font-size:11.5px; color:var(--text-faint); letter-spacing:.01em;}
+  .muted{color:var(--text-dim); font-size:13px; line-height:1.5;}
+
+  .pill{font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; display:inline-block;}
+  .pill.teal{background:var(--teal-dim); color:var(--teal);}
+  .pill.amber{background:var(--amber-dim); color:var(--amber);}
+  .pill.heart{background:var(--heart-dim); color:var(--heart);}
+  .pill.brain{background:var(--brain-dim); color:var(--brain);}
+  .pill.blue{background:var(--blue-dim); color:var(--blue);}
+
+  .chip{border:1px solid var(--border-strong); border-radius:10px; padding:10px 12px; font-size:13px; text-align:center; background:var(--surface-2); color:var(--text-dim);}
+  .chip.on{background:var(--teal-dim); border-color:var(--teal); color:var(--teal);}
+  .chip-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+
+  .toggle{width:42px; height:24px; border-radius:14px; background:var(--surface-2); border:1px solid var(--border-strong); position:relative; flex-shrink:0;}
+  .toggle .knob{width:18px; height:18px; border-radius:50%; background:var(--text-faint); position:absolute; top:2px; left:2px; transition:.15s;}
+  .toggle.on{background:var(--teal-dim); border-color:var(--teal);}
+  .toggle.on .knob{left:21px; background:var(--teal);}
+
+  .row-line{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--border);}
+  .row-line:last-child{border-bottom:none;}
+  .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot.teal{background:var(--teal);} .dot.amber{background:var(--amber);} .dot.heart{background:var(--heart);} .dot.brain{background:var(--brain);}
+
+  /* --- stage banner --- */
+  .stage-banner{border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px;}
+  .stage-banner.warmup{background:var(--surface-2); border:1px solid var(--border-strong);}
+  .stage-banner.optimal{background:var(--teal-dim); border:1px solid transparent;}
+  .stage-banner.effort{background:var(--amber-dim); border:1px solid transparent;}
+  .stage-banner.risk{background:var(--heart-dim); border:1px solid transparent;}
+  .stage-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .stage-banner.warmup .stage-dot{background:var(--text-dim);}
+  .stage-banner.optimal .stage-dot{background:var(--teal); box-shadow:0 0 0 4px var(--teal-dim);}
+  .stage-banner.effort .stage-dot{background:var(--amber); box-shadow:0 0 0 4px var(--amber-dim);}
+  .stage-banner.risk .stage-dot{background:var(--heart); box-shadow:0 0 0 4px var(--heart-dim);}
+  .stage-banner .stage-title{font-weight:600; font-size:14px;}
+  .stage-banner .stage-sub{font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+
+  /* --- gauges --- */
+  .gauge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+  .gauge{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 14px;}
+  .gauge .g-head{display:flex; align-items:center; gap:6px; margin-bottom:8px;}
+  .gauge .g-head .g-dot{width:7px; height:7px; border-radius:50%;}
+  .gauge.brain .g-head .g-dot{background:var(--brain);}
+  .gauge.heart .g-head .g-dot{background:var(--heart);}
+  .gauge .g-label{font-size:11.5px; color:var(--text-dim); font-weight:500;}
+  .gauge .g-num{font-size:26px; font-weight:600; line-height:1;}
+  .gauge .g-status{font-size:11px; margin-top:3px;}
+  .g-bar{height:6px; border-radius:4px; background:var(--surface-3); margin-top:9px; overflow:hidden;}
+  .g-bar .fill{height:100%; border-radius:4px; transition:width .5s ease;}
+  .gauge.brain .g-bar .fill{background:var(--brain);}
+  .gauge.heart .g-bar .fill{background:var(--heart);}
+
+  .metric-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+  .metric{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;}
+  .metric .num{font-size:20px; font-weight:600; margin-top:2px;}
+
+  .signal-card{margin-bottom:14px; cursor:pointer;}
+  .alert-item{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; border-radius:11px; padding:11px 12px; font-size:12.5px; margin-bottom:8px; cursor:pointer;}
+  .alert-item.amber{background:var(--amber-dim); color:#f0c589;}
+  .alert-item.heart{background:var(--heart-dim); color:#f6a3b1;}
+  .alert-item.brain{background:var(--brain-dim); color:#c6bafb;}
+  .alert-item .x{opacity:.7; font-size:13px; flex-shrink:0;}
+  .banner{background:var(--heart-dim); color:var(--heart); font-size:12px; padding:9px 12px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+
+  .recovery-item{display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .recovery-item:last-child{border-bottom:none;}
+  .check{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border-strong); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent;}
+  .check.done{background:var(--teal); border-color:var(--teal); color:#04241a;}
+
+  .navbar{display:flex; justify-content:space-around; padding:10px 0 20px; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0;}
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-faint); font-size:9.5px; width:60px;}
+  .navitem.active{color:var(--teal);}
+  .navicon{width:20px; height:20px;}
+
+  .stat-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .stat-row:last-child{border-bottom:none;}
+  .zonebar{display:flex; height:14px; border-radius:8px; overflow:hidden; margin:10px 0 6px;}
+  .zonebar span{height:100%;}
+  .zonekey{display:flex; gap:12px; flex-wrap:wrap; font-size:10.5px; color:var(--text-dim);}
+  .zonekey .k{display:flex; align-items:center; gap:5px;}
+  .zonekey .sw{width:8px; height:8px; border-radius:2px;}
+
+  .empty{display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; margin:auto; padding:40px 10px; color:var(--text-dim);}
+
+  .toast{
+    position:absolute; bottom:90px; left:20px; right:20px; background:var(--surface-2);
+    border:1px solid var(--border-strong); border-radius:10px; padding:10px 14px; font-size:12.5px;
+    opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:5;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .weekgoal{display:flex; gap:6px; margin-top:8px;}
+  .weekgoal .d{flex:1; height:6px; border-radius:4px; background:var(--surface-3);}
+  .weekgoal .d.on{background:var(--teal);}
+
+  /* ================= DESKTOP DASHBOARD LAYOUT ================= */
+  @media (min-width:900px){
+    .app-wrap.active{align-items:stretch; justify-content:stretch;}
+    .phone{
+      max-width:1180px; width:94vw; height:88vh; max-height:800px; margin:auto;
+      border-radius:22px; flex-direction:row;
+    }
+    .statusbar{display:none;}
+    .navbar{
+      order:-1; flex-direction:column; justify-content:flex-start; align-items:center;
+      gap:26px; width:92px; padding:32px 0; border-top:none; border-right:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .navitem{width:auto;}
+    .navitem span{display:none;}
+    .navicon{width:22px; height:22px;}
+    .screens{padding:0;}
+    .screen{padding:34px 44px 0; max-width:820px; margin:0 auto;}
+    .gauge-grid, .metric-grid{grid-template-columns:repeat(4,1fr);}
+    .chip-grid{grid-template-columns:repeat(3,1fr);}
+    .btn-row{padding-bottom:34px;}
+    .topbar h2{font-size:22px;}
+  }
+
+  /* ================= FIGMA-STYLE FRAME OVERVIEW ================= */
+  .board-wrap{display:none; width:100%; height:100%; overflow:auto; padding:76px 24px 40px;}
+  .board-wrap.active{display:block;}
+  .board-canvas{
+    min-width:max-content; display:flex; gap:56px; padding:20px;
+    background-image:radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+  .frame-col{display:flex; flex-direction:column; gap:40px;}
+  .frame{position:relative;}
+  .frame-label{font-family:'Space Grotesk',sans-serif; font-size:12.5px; color:var(--text-dim); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+  .frame-label .fnum{color:var(--text-faint); font-variant-numeric:tabular-nums;}
+  .frame-box{
+    width:280px; height:572px; background:var(--bg); border-radius:22px; border:1px solid var(--border-strong);
+    overflow:hidden; position:relative; box-shadow:0 12px 30px rgba(0,0,0,.4);
+  }
+  .frame-box .screen{position:static; opacity:1; padding:6px 16px 0; transform:scale(.82); transform-origin:top left; width:341px; height:697px; overflow:hidden; pointer-events:none;}
+  .frame-box .fake-status{display:flex; justify-content:space-between; padding:14px 22px 4px; font-size:12px; color:var(--text-dim);}
+  .frame-arrow{position:absolute; top:50%; right:-44px; transform:translateY(-50%); color:var(--text-faint); font-size:20px;}
+  .board-title{color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:20px; margin:0 0 4px; padding:0 24px;}
+  .board-sub{color:var(--text-dim); font-size:13px; margin:0 0 18px; padding:0 24px; max-width:640px;}
+</style>
+</head>
+<body>
+
+<div class="modebar">
+  <button id="modeAppBtn" class="active" onclick="setMode('app')">Live app</button>
+  <button id="modeBoardBtn" onclick="setMode('board')">Frame overview</button>
+</div>
+
+<!-- ===================== LIVE APP ===================== -->
+<div class="app-wrap active" id="appWrap">
+  <div class="phone" id="phone">
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="screens" id="screens"></div>
+    <div class="navbar" id="navbar"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<!-- ===================== FIGMA-STYLE FRAME OVERVIEW ===================== -->
+<div class="board-wrap" id="boardWrap">
+  <h1 class="board-title">NeuroPulse Fit — UX flow</h1>
+  <p class="board-sub">Every screen in the product, laid out in the order a person moves through them: onboarding → device check → live training → risk &amp; recovery → summary → history. Switch to "Live app" to interact with it.</p>
+  <div class="board-canvas" id="boardCanvas"></div>
+</div>
+
+<script>
+/* =========================================================================
+   DATA MODEL
+========================================================================= */
+const ACTIVITIES = [
+  {id:'bodybuilding', name:'Bodybuilding', hint:'Strength / hypertrophy'},
+  {id:'running',      name:'Running',      hint:'Steady-state / intervals'},
+  {id:'yoga',         name:'Yoga',         hint:'Mobility / breathwork'},
+  {id:'hiit',         name:'HIIT',         hint:'High-intensity intervals'},
+  {id:'general',      name:'General training', hint:'Mixed / gym session'},
+];
+
+const RECOVERY_LIBRARY = {
+  breathing:{title:'Box breathing reset', detail:'Inhale 4s · hold 4s · exhale 4s · hold 4s, repeat for 90 seconds.'},
+  hydrate:{title:'Hydrate', detail:'Sip 200–300ml of water before continuing.'},
+  dropload:{title:'Drop intensity one level', detail:'Reduce pace, weight, or tempo for the next block.'},
+  extendrest:{title:'Extend rest between sets', detail:'Add 30–45s of rest before the next set or interval.'},
+  formcheck:{title:'Reset your form', detail:'Slow the next rep down and check bar path / posture before continuing.'},
+  stopcooldown:{title:'End the set and cool down', detail:'Stop this block, walk it out, and let heart rate settle below 120bpm.'},
+  stretch:{title:'Move into stillness', detail:'Come out of the pose, sit, and take 5 slow breaths before continuing.'},
+};
+
+const STAGE_META = {
+  warmup:{label:'Warm-up',            cls:'warmup',  sub:'Building into the session — nothing to act on yet.'},
+  optimal:{label:'Optimal / Flow',    cls:'optimal', sub:'Brain and heart signals are within your normal working range.'},
+  effort:{label:'High effort',        cls:'effort',  sub:'Working hard — worth watching, not yet a concern.'},
+  risk:{label:'Overreaching — risk',  cls:'risk',    sub:'Signals suggest strain building faster than your baseline recovers from.'},
+};
+
+/* per-activity scripted demo timeline: [minute, brain(0-100 stress/load), heart(0-100 strain)] */
+const TIMELINES = {
+  bodybuilding: [[0,22,18],[2,34,30],[4,46,42],[6,58,55],[8,71,64],[10,83,74],[12,88,80],[14,74,60],[16,55,44]],
+  running:      [[0,20,24],[2,32,38],[4,44,52],[6,55,63],[8,66,74],[10,78,86],[12,86,92],[14,70,68],[16,52,50]],
+  yoga:         [[0,40,14],[2,32,16],[4,26,15],[6,22,14],[8,30,20],[10,58,34],[12,70,40],[14,42,22],[16,26,16]],
+  hiit:         [[0,26,20],[2,44,40],[4,62,58],[6,78,74],[8,90,88],[10,94,95],[12,80,72],[14,60,52],[16,40,34]],
+  general:      [[0,24,20],[2,38,34],[4,50,46],[6,60,56],[8,68,64],[10,60,54],[12,52,46],[14,40,36],[16,30,26]],
+};
+
+const RISK_PROFILE = {
+  bodybuilding:{trigger:'brain', why:'Cognitive load is climbing faster than load usually does at this stage of a strength session — often a sign of fatiguing form control before the muscle itself is done.', recs:['formcheck','extendrest','hydrate']},
+  running:     {trigger:'heart', why:'Cardiac strain has crossed your personal threshold for sustained pace — heart rate is rising without pace increasing, a classic cardiac-drift warning.', recs:['dropload','hydrate','breathing']},
+  yoga:        {trigger:'heart', why:'Heart strain is unusually high for a low-exertion pose — often linked to breath-holding or overreaching a stretch rather than physical effort.', recs:['stretch','breathing']},
+  hiit:        {trigger:'both', why:'Both brain load and cardiac strain are elevated together — the combination most associated with overreaching in interval training.', recs:['stopcooldown','breathing','hydrate']},
+  general:     {trigger:'heart', why:'Heart strain is trending above your baseline for this kind of session.', recs:['dropload','extendrest','hydrate']},
+};
+
+/* ---- exercise / position library, per category ----
+   Each entry explains the brain+heart mechanism behind why it "works" (the
+   pump / the flow / the burn), what it looks like when it's NOT working,
+   why that happens, and how to fix it. */
+const EXERCISE_LIBRARY = {
+  bodybuilding:[
+    {id:'incline-curl', name:'Incline dumbbell curl', tag:'Biceps — long head',
+     brainRole:'Mind-muscle focus on the stretch position recruits more motor units in the long head, which sits on the outside of the arm.',
+     heartRole:'Short sets and short rest keep local blood flow trapped in the muscle — that trapped blood (not heart rate) is most of what you feel as "the pump".',
+     problem:{title:'Feels like a stretch but no pump', why:'Usually the elbow drifts forward, taking tension off the long head, or rest between sets is too long and the blood pools out before the next set.'},
+     solution:['Keep the elbow pinned slightly behind the torso through the whole rep','Cap rest at 45–60s for pump-focused sets','Slow the eccentric to 2–3s to hold tension at the stretch']},
+    {id:'concentration-curl', name:'Concentration curl', tag:'Biceps — short head (peak)',
+     brainRole:'Isolating the arm and watching it strengthens the mind-muscle connection, which increases short-head recruitment more than any other curl variation.',
+     heartRole:'Heart rate rises only moderately here — the burn is metabolic (local), not cardiovascular, so a high heart rate is not the goal for this move.',
+     problem:{title:'Peak not showing up', why:'Momentum from the shoulder or torso is doing part of the lift, so the short head never reaches full contraction.'},
+     solution:['Brace your elbow against your inner thigh so only the forearm moves','Squeeze and hold 1s at the top before lowering','Drop the weight 10–15% and rebuild strict form first']},
+    {id:'incline-bench', name:'Incline barbell press', tag:'Chest — upper',
+     brainRole:'Cueing "push through the upper chest" before the set shifts motor-unit recruitment upward and improves bar path consistency.',
+     heartRole:'Heavy compound pressing spikes heart rate fast — strain here is normal and expected, unlike an isolation curl.',
+     problem:{title:'Shoulders doing the work, chest feels flat', why:'Bench angle is too steep (above ~30°) or the shoulder blades aren\'t retracted, so delts take over the movement.'},
+     solution:['Drop the bench to 15–30°','Pin your shoulder blades back and down before unracking','Lower the bar to the upper chest, not the collarbone']},
+    {id:'weighted-dips', name:'Weighted dips', tag:'Chest — lower / triceps',
+     brainRole:'Leaning the torso forward shifts brain-driven recruitment toward the lower chest fibers instead of the triceps.',
+     heartRole:'A compound push under load with added weight drives heart strain up quickly — this is one of the higher cardiac-load bodybuilding moves.',
+     problem:{title:'Shoulders feel the strain, not the chest', why:'Staying too upright turns the dip into a triceps-dominant, shoulder-loading movement.'},
+     solution:['Lean forward ~30° and let the elbows flare slightly','Stop at the point where shoulders are level with elbows','Reduce added weight until the lean can be held with control']},
+    {id:'wide-pullup', name:'Wide-grip pull-up', tag:'Back — width (lats)',
+     brainRole:'Thinking "elbows to hips" instead of "hands to bar" redirects brain-driven effort into the lats rather than the arms.',
+     heartRole:'A demanding bodyweight compound pull — expect heart rate to climb close to your interval-training range by the last few reps.',
+     problem:{title:'Arms give out before the back does', why:'Grip and biceps are doing most of the pulling because the shoulder blades never depress and retract first.'},
+     solution:['Start every rep by pulling the shoulder blades down and back','Use a slightly wider-than-shoulder grip, not maximal width','Add a 1s pause at the top to confirm the lats, not the arms, are working']},
+    {id:'barbell-row', name:'Barbell row', tag:'Back — thickness',
+     brainRole:'A flat, braced spine lets the brain recruit the mid-back cleanly; a rounded back reroutes effort into the lower back and grip.',
+     heartRole:'Heart strain builds steadily across a set as the isometric hold on the spine adds to the pulling effort.',
+     problem:{title:'Lower back tightens up instead of the back pumping', why:'The torso is rowing from the hips each rep (using momentum) rather than staying fixed while the arms pull.'},
+     solution:['Brace your core and fix your torso angle before the first rep','Pull to the lower ribs, not the chest','Drop the weight until the torso can stay still for every rep']},
+    {id:'overhead-ext', name:'Overhead triceps extension', tag:'Triceps — long head',
+     brainRole:'Keeping the upper arm pinned by the ear and focusing on the stretch overhead biases the long head, the only triceps head that crosses the shoulder.',
+     heartRole:'Low systemic demand — heart rate barely moves, so if you feel breathless here the load or the rest period is off.',
+     problem:{title:'Elbows flare, no stretch felt', why:'The upper arm drifts forward as the weight drops behind the head, taking the long head out of its full stretch.'},
+     solution:['Keep elbows close to your ears throughout','Lower slowly until you feel a full stretch, not just to comfort','Use a lighter weight if elbows keep flaring outward']},
+    {id:'leg-press', name:'Leg press / squat', tag:'Quads',
+     brainRole:'Driving through the whole foot (not just the toes) improves brain-to-muscle signal to the quads and reduces knee strain.',
+     heartRole:'Big lower-body compound lifts are the most cardiac-demanding bodybuilding movement — expect the largest heart-level spike of any exercise in this list.',
+     problem:{title:'Quads burn out but legs feel weak, not pumped', why:'Heart strain is likely maxing out before the muscle reaches failure — the cardiovascular system, not the quads, is the limiter.'},
+     solution:['Extend rest between heavy sets to let heart rate settle first','Check breathing — exhale on the push instead of holding your breath','Cycle in lighter, higher-rep weeks to build cardiac tolerance for leg day']},
+  ],
+  running:[
+    {id:'easy-run', name:'Easy / base run', tag:'Aerobic base',
+     brainRole:'Low cognitive load lets the brain settle into a steady rhythm — this is the pace where mental fatigue should stay low the whole run.',
+     heartRole:'Heart rate should sit comfortably in zone 2; this is what actually builds aerobic capacity over time, more than fast running does.',
+     problem:{title:'Heart rate creeps up even though pace feels easy', why:'Cardiac drift from heat, dehydration, or under-recovery — the same "easy" pace costs more heart strain than it should.'},
+     solution:['Slow down further until heart rate matches the effort, not the pace','Hydrate before heading out, especially in heat','Check if this run is too soon after a hard session']},
+    {id:'tempo-run', name:'Tempo run', tag:'Threshold',
+     brainRole:'Sustained focus is needed to hold pace right at the edge of comfortable — this is where mental fatigue starts building on purpose.',
+     heartRole:'Heart strain should sit just under your red-line — high effort, but repeatable, which is the point of threshold training.',
+     problem:{title:'Fading hard in the second half', why:'Starting pace is faster than current threshold, so heart strain crosses into the risk zone too early and forces a slowdown.'},
+     solution:['Start 5–10s/km slower than goal pace and negative-split','Break it into shorter reps with 60–90s float recovery','Reassess your threshold pace every few weeks rather than guessing']},
+    {id:'interval-run', name:'Interval / VO2max reps', tag:'High intensity',
+     brainRole:'Short, hard reps demand quick brain-driven pacing decisions each interval — mental fatigue rises fast and recovers fast between reps.',
+     heartRole:'Heart strain should peak near your max during the work interval, then drop noticeably in recovery — that swing is the training effect.',
+     problem:{title:'Heart rate stays high through the "recovery" jog', why:'Recovery intervals are too short or too fast, so the cardiovascular system never gets the down-swing it needs.'},
+     solution:['Walk or jog very lightly during recovery, don\'t just slow slightly','Extend recovery time until heart rate visibly drops before the next rep','Cut the total number of reps rather than shortening recovery']},
+    {id:'long-run', name:'Long run', tag:'Endurance',
+     brainRole:'Mental fatigue typically builds gradually and is the main limiter late in a long run, often before the legs fully give out.',
+     heartRole:'Heart strain should rise only slightly across the run (mild drift); a sharp late rise signals fuel or hydration running out.',
+     problem:{title:'Heart rate spikes in the final third', why:'Glycogen or fluid stores are depleted, so the heart works harder to deliver the same pace.'},
+     solution:['Fuel with carbs every 40–45 minutes on runs over 75 minutes','Hydrate on a schedule, not just when thirsty','Slow the pace proactively in the final third instead of holding on']},
+    {id:'hill-sprints', name:'Hill sprints', tag:'Power / neuromuscular',
+     brainRole:'Maximal effort sprints need full brain-driven motor-unit recruitment — this is a nervous-system-intensive session, not just a cardio one.',
+     heartRole:'Heart strain rises and falls sharply rep to rep; full recovery (walk back down) between reps is what keeps quality high.',
+     problem:{title:'Later reps feel slow despite full effort', why:'Nervous-system (brain) fatigue is limiting force output before the heart or legs are the bottleneck.'},
+     solution:['Cap sessions at 6–8 quality reps rather than chasing more','Take full recovery (60–90s) between reps','End the session once reps noticeably slow down, don\'t push through']},
+    {id:'recovery-run', name:'Recovery run', tag:'Active recovery',
+     brainRole:'Deliberately low focus and effort here helps the nervous system down-regulate after a hard session.',
+     heartRole:'Heart strain should be the lowest of your week\'s runs — if it isn\'t, the body hasn\'t actually recovered from the last session yet.',
+     problem:{title:'Feels harder than it should for an "easy" day', why:'Residual strain from a previous hard session hasn\'t cleared, so today\'s baseline is already elevated.'},
+     solution:['Shorten the run or replace it with walking','Prioritize sleep and hydration before the next hard session','Push the next hard session back a day if strain is still high']},
+  ],
+  yoga:[
+    {id:'downdog', name:'Downward-facing dog', tag:'Foundational stretch',
+     brainRole:'Focusing on long exhales here activates the parasympathetic (calming) nervous system, which is the main brain effect of this pose.',
+     heartRole:'Heart strain should be low to moderate; the head-below-heart position naturally supports a calmer heart rate.',
+     problem:{title:'Heart rate feels elevated, breath feels short', why:'Breath is being held or shortened, often from gripping the shoulders too hard, which blocks the calming effect the pose is meant to give.'},
+     solution:['Bend the knees generously to release the hamstrings and low back','Lengthen the exhale until it\'s longer than the inhale','Rest in child\'s pose if breath can\'t settle within a few breaths']},
+    {id:'warrior2', name:'Warrior II', tag:'Standing strength',
+     brainRole:'Holding a fixed gaze (drishti) while the legs work builds focus under physical load — a mild, controlled brain-load pose.',
+     heartRole:'Heart strain rises modestly from the isometric leg hold — normal, and it should plateau rather than keep climbing.',
+     problem:{title:'Legs shake and heart rate keeps climbing', why:'The front knee has likely drifted past the ankle, or the hold is longer than current leg strength supports.'},
+     solution:['Stack the front knee directly over the ankle','Shorten the hold time and rebuild duration gradually','Sink less deep until the pose can be held without shaking']},
+    {id:'tree-pose', name:'Tree pose', tag:'Balance',
+     brainRole:'Balance poses demand continuous small brain corrections — this is a cognitive-load pose more than a strength one.',
+     heartRole:'Heart rate should barely move; a spike usually reflects frustration or bracing, not physical effort.',
+     problem:{title:'Can\'t hold it, keeps toppling', why:'Fixing the gaze on a moving point (or a phone/mirror) removes the visual anchor the brain needs for balance.'},
+     solution:['Pick one still point at eye level and hold your gaze there','Press the lifted foot and standing leg into each other actively','Practice near a wall until balance improves']},
+    {id:'pigeon', name:'Pigeon pose', tag:'Hip opener',
+     brainRole:'Deep stretches trigger a protective brain response (guarding) if the nervous system doesn\'t trust the position yet — that guarding is felt as tightness.',
+     heartRole:'Heart strain should stay low; if it rises, it usually means the breath has stopped, not that the hip is working harder.',
+     problem:{title:'Hip won\'t release, feels tight every time', why:'The nervous system is bracing against the stretch because it\'s being forced rather than eased into.'},
+     solution:['Prop the hip with a cushion so the position feels supported, not forced','Breathe into the stretch for 5+ slow breaths before expecting release','Back off the depth by 20–30% and hold longer instead of going deeper']},
+    {id:'sun-salutation', name:'Sun salutation flow', tag:'Dynamic warm-up',
+     brainRole:'Linking breath to movement (one breath per movement) is what shifts this from exercise into a brain-calming, meditative flow.',
+     heartRole:'Heart rate should rise gently through the flow as a natural warm-up, without ever feeling like cardio.',
+     problem:{title:'Feels rushed, heart rate spikes like cardio', why:'Movement is outrunning the breath, turning a calming flow into an accidental cardio set.'},
+     solution:['Slow the pace until each movement matches one full breath','Add an extra breath at forward fold and downward dog','Reduce the number of rounds before adding speed back']},
+    {id:'savasana', name:'Savasana (final relaxation)', tag:'Recovery / integration',
+     brainRole:'This pose is where the brain consolidates the parasympathetic shift built during the practice — skipping it undoes some of the calming effect.',
+     heartRole:'Heart rate should reach its lowest point of the whole session here.',
+     problem:{title:'Mind stays busy, can\'t settle', why:'Ending the practice on a stimulating pose or rushing straight into it doesn\'t give the nervous system time to downshift.'},
+     solution:['Add 1–2 minutes of slow breathing before lying down','Keep the room quiet and dim if possible','Stay at least 5 minutes — cutting it short removes most of the benefit']},
+  ],
+  hiit:[
+    {id:'burpees', name:'Burpees', tag:'Full body',
+     brainRole:'Coordinating a fast multi-step movement under fatigue is highly brain-demanding — form breaks down here first, before the muscles fail.',
+     heartRole:'One of the fastest heart-rate spikes of any HIIT move — expect it to climb hard within a few reps.',
+     problem:{title:'Form falls apart after a few reps', why:'Brain-driven coordination degrades faster than the muscles do, so speed outpaces control.'},
+     solution:['Step back into the plank instead of jumping when fatigued','Slow the tempo slightly rather than dropping reps','Shorten the work interval and keep intensity high instead']},
+    {id:'kb-swing', name:'Kettlebell swings', tag:'Posterior chain / power',
+     brainRole:'The hip-hinge pattern relies on a strong brain-to-glute signal; when that signal fades, the lower back takes over instead.',
+     heartRole:'Heart strain builds quickly and steadily across a set, similar to a short sprint.',
+     problem:{title:'Lower back feels it instead of the glutes/hamstrings', why:'The movement has turned into a squat-and-lift rather than a hip hinge, usually from fatigue or rushing the tempo.'},
+     solution:['Reset with a few slow, deliberate hinges before speeding up','Cue "hips back" rather than "swing the arms"','Reduce weight until the hinge pattern stays clean under fatigue']},
+    {id:'jump-squat', name:'Jump squats', tag:'Lower body power',
+     brainRole:'Explosive output depends on fresh nervous-system drive — this move fatigues brain-to-muscle signaling fast.',
+     heartRole:'Heart rate rises sharply; landing mechanics also depend on the heart delivering oxygen fast enough to legs already under load.',
+     problem:{title:'Jump height drops off quickly', why:'Nervous-system fatigue is limiting power output before the legs are actually out of strength.'},
+     solution:['Keep sets short (6–10 reps) so quality stays high','Rest fully between sets rather than rushing the next round','Swap to bodyweight squats once jump height clearly drops']},
+    {id:'battle-ropes', name:'Battle ropes', tag:'Upper body / conditioning',
+     brainRole:'Rapid alternating arm patterns need continuous brain coordination, which is why form (not just arms) tires quickly.',
+     heartRole:'Heart rate climbs fast and stays high — one of the more cardiovascular-dominant HIIT moves.',
+     problem:{title:'Waves get small and sloppy fast', why:'Shoulders are doing isolated small movements instead of using the legs and core to drive the wave.'},
+     solution:['Bend the knees and use a slight squat rhythm to drive the wave','Shorten intervals to 15–20s if waves collapse earlier than that','Keep shoulders down away from the ears throughout']},
+    {id:'box-jump', name:'Box jumps', tag:'Explosive power',
+     brainRole:'Landing safely requires quick brain-driven joint control — this degrades noticeably as fatigue builds.',
+     heartRole:'Heart rate spikes per rep with brief recovery between — a stop-start cardiac pattern rather than sustained strain.',
+     problem:{title:'Landings feel heavy or unstable', why:'Coordination fatigue (brain) is arriving before leg strength runs out, raising injury risk on landing.'},
+     solution:['Step down instead of jumping down between reps','Stop the set once landings feel noticeably less controlled','Lower the box height rather than pushing through poor landings']},
+    {id:'mtn-climbers', name:'Mountain climbers', tag:'Core / conditioning',
+     brainRole:'Keeping the core braced while the limbs move fast needs steady brain-to-core signaling that fades under fatigue.',
+     heartRole:'Heart rate rises quickly and sustains — a good marker of true cardiovascular conditioning intensity.',
+     problem:{title:'Hips rise up, lower back rounds', why:'Core bracing has fatigued first, so the hips pike up to compensate and take load off the midline.'},
+     solution:['Slow the pace to restore a flat back before speeding back up','Shorten the interval so form holds for the whole set','Rest the knees on the ground briefly rather than letting hips pike']},
+  ],
+  general:[
+    {id:'full-body-circuit', name:'Full-body circuit', tag:'Strength + conditioning',
+     brainRole:'Switching between different movement patterns station to station keeps brain engagement high throughout.',
+     heartRole:'Heart strain rises in waves as strength and cardio-style stations alternate — expect it to stay moderately elevated the whole circuit.',
+     problem:{title:'Later stations feel much harder than earlier ones', why:'Heart strain from earlier stations hasn\'t cleared before the next one starts, so fatigue compounds faster than expected.'},
+     solution:['Add 15–20s extra rest between stations','Reorder so the most demanding stations aren\'t back-to-back','Track heart level between stations and don\'t start the next until it settles']},
+    {id:'cardio-machine', name:'Cardio machine session', tag:'Steady-state cardio',
+     brainRole:'Lower cognitive demand — mental fatigue here mostly comes from boredom or pacing decisions, not the movement itself.',
+     heartRole:'Heart level should sit in a steady, predictable range for the whole session, matching the resistance/speed you\'ve set.',
+     problem:{title:'Heart rate keeps rising at the same setting', why:'Cardiac drift, often from heat, dehydration, or accumulated fatigue from previous sessions this week.'},
+     solution:['Lower resistance/speed slightly to bring heart rate back in range','Hydrate before and during longer sessions','Check whether this session is too soon after a hard one earlier in the week']},
+    {id:'functional-kb', name:'Functional / kettlebell training', tag:'Mixed strength',
+     brainRole:'Compound, multi-joint movements need continuous whole-body coordination — brain load is higher than isolated machine work.',
+     heartRole:'Heart strain varies a lot by movement — expect swings and carries to spike it more than presses or holds.',
+     problem:{title:'Coordination breaks down mid-session', why:'Brain-driven coordination fatigues before the target muscles are fully worked, especially on complex or new movements.'},
+     solution:['Practice new movement patterns early in the session while fresh','Lower load on complex lifts before lowering load on simple ones','Break complex movements into their parts if form keeps slipping']},
+    {id:'core-stability', name:'Core & stability work', tag:'Trunk / balance',
+     brainRole:'Stability work relies on constant small brain corrections — similar demand to balance-based yoga poses.',
+     heartRole:'Heart strain should stay low to moderate; a spike usually means bracing or breath-holding, not real cardiovascular effort.',
+     problem:{title:'Shaking or losing form quickly', why:'Breath is being held to brace, which spikes heart strain and speeds up fatigue rather than helping stability.'},
+     solution:['Exhale steadily through the hardest part of each hold','Shorten hold times and build duration gradually','Regress to an easier variation if shaking starts within a few seconds']},
+    {id:'mobility-cooldown', name:'Mobility & stretching cooldown', tag:'Recovery',
+     brainRole:'This is where the brain should shift toward the same calming state yoga\'s Savasana targets — a deliberate down-regulation after training.',
+     heartRole:'Heart level should drop steadily throughout; if it doesn\'t, the body is still carrying strain from the main session.',
+     problem:{title:'Heart rate stays elevated well after finishing', why:'The main session was harder than the current fitness level fully recovers from within the same day.'},
+     solution:['Extend the cooldown with slow breathing for a few extra minutes','Hydrate and eat something with the next meal sooner rather than later','Plan an easier session or rest day next, rather than repeating the same intensity']},
+    {id:'beginner-fullbody', name:'Beginner full-body day', tag:'Getting started',
+     brainRole:'New movement patterns demand high conscious brain focus at first — this fades naturally as technique becomes automatic with practice.',
+     heartRole:'Heart level often rises faster than expected early on, simply because the body isn\'t yet efficient at these new movements.',
+     problem:{title:'Gassed out much faster than expected', why:'Inefficient movement patterns cost more heart strain per rep than they will once technique improves.'},
+     solution:['Use lighter loads and focus entirely on technique for the first few sessions','Add extra rest between exercises while patterns are still new','Expect heart strain to drop naturally over 2–3 weeks as movements become efficient']},
+  ],
+};
+
+function statusFor(v){ return v<35?'Calm':v<60?'Elevated':v<80?'High':'Critical'; }
+function stageFor(brain,heart,minute){
+  if(minute<=1) return 'warmup';
+  const idx = brain*0.5+heart*0.5;
+  if(idx>=78) return 'risk';
+  if(idx>=55) return 'effort';
+  return 'optimal';
+}
+
+/* ---------------- creative chart helpers (pure SVG, no library) ---------------- */
+const JS_COLORS = {brain:'#9B87F5', heart:'#F2637A', teal:'#33C793', amber:'#E3A23C'};
+
+function hashSeed(str){ let h=0; for(let i=0;i<str.length;i++){ h = Math.imul(31,h) + str.charCodeAt(i) | 0; } return Math.abs(h); }
+function seededCurve(seed, n){
+  const arr = [];
+  for(let i=0;i<n;i++){
+    let x = Math.sin(seed*0.017 + i*12.9898) * 43758.5453;
+    x = x - Math.floor(x);
+    arr.push(Math.round(18 + x*72));
+  }
+  return arr;
+}
+function sparkPathFromValues(values, w, h){
+  const n = values.length-1;
+  return values.map((v,i)=>`${((i/n)*w).toFixed(1)},${(h-(v/100)*h).toFixed(1)}`).join(' ');
+}
+
+function svgRadar(labels, values, colorHex, size){
+  size = size||190;
+  const n = labels.length, cx=size/2, cy=size/2, r=size/2-30;
+  const ptAt = (i,frac)=>{ const a=(Math.PI*2*i/n)-Math.PI/2; return [cx+r*frac*Math.cos(a), cy+r*frac*Math.sin(a)]; };
+  const rings = [0.33,0.66,1].map(f=>`<polygon points="${labels.map((_,i)=>ptAt(i,f).join(',')).join(' ')}" fill="none" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const spokes = labels.map((_,i)=>{ const p=ptAt(i,1); return `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`; }).join('');
+  const poly = values.map((v,i)=>ptAt(i,Math.max(0.06,v/100)).map(n=>n.toFixed(1)).join(',')).join(' ');
+  const labelEls = labels.map((l,i)=>{ const p=ptAt(i,1.22); return `<text x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" font-size="9.5" fill="var(--text-dim)" text-anchor="middle" dominant-baseline="middle" font-family="Inter">${l}</text>`; }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${rings}${spokes}<polygon points="${poly}" fill="${colorHex}33" stroke="${colorHex}" stroke-width="2"/>${labelEls}</svg>`;
+}
+function svgRing(percent, colorHex, size, label){
+  size = size||128; const strokeW=11; const r=size/2-strokeW;
+  const c=2*Math.PI*r; const dash=c*(Math.max(0,Math.min(100,percent))/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-3)" stroke-width="${strokeW}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${colorHex}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="${size/2}" y="${size/2+3}" font-size="21" font-weight="600" fill="var(--text)" text-anchor="middle" font-family="Space Grotesk">${Math.round(percent)}%</text>
+    ${label?`<text x="${size/2}" y="${size/2+19}" font-size="9" fill="var(--text-faint)" text-anchor="middle" font-family="Inter">${label}</text>`:''}
+  </svg>`;
+}
+function svgDecayBars(values, colorHex){
+  const w=280,h=92; const gap=w/values.length; const bw=gap*0.56;
+  const bars = values.map((v,i)=>{ const bh=(v/100)*h; const x=i*gap+(gap-bw)/2; const op=(0.4+0.6*(v/100)).toFixed(2);
+    return `<rect x="${x.toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="${colorHex}" opacity="${op}"/>`; }).join('');
+  return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}">${bars}<line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="var(--border)" stroke-width="1"/></svg>`;
+}
+function svgDualLine(splits){
+  const w=280,h=92,n=splits.length;
+  const paces = splits.map(s=>s.pace); const maxP=Math.max(...paces), minP=Math.min(...paces);
+  const hrPts = splits.map((s,i)=>`${((i/(n-1))*w).toFixed(1)},${(h-(s.hr/100)*h).toFixed(1)}`).join(' ');
+  const pacePts = splits.map((s,i)=>{ const norm = maxP===minP?0.5:(s.pace-minP)/(maxP-minP); const y = h*0.12 + (1-norm)*h*0.76; return `${((i/(n-1))*w).toFixed(1)},${y.toFixed(1)}`; }).join(' ');
+  return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="${hrPts}" fill="none" stroke="${JS_COLORS.heart}" stroke-width="2.2"/>
+    <polyline points="${pacePts}" fill="none" stroke="${JS_COLORS.teal}" stroke-width="2.2" stroke-dasharray="5 4"/>
+  </svg>`;
+}
+function svgDonut(segments, size){
+  // segments: [{value, colorHex}], values sum to ~100
+  size = size||120; const strokeW=16; const r=size/2-strokeW; const c=2*Math.PI*r;
+  let offset=0;
+  const arcs = segments.map(seg=>{
+    const len = c*(seg.value/100);
+    const el = `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${seg.colorHex}" stroke-width="${strokeW}" stroke-dasharray="${len.toFixed(1)} ${c.toFixed(1)}" stroke-dashoffset="${(-offset).toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>`;
+    offset += len; return el;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}</svg>`;
+}
+
+/* Build category-specific creative data from a session's timeline */
+function buildCategoryExtra(activity, tl){
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  if(activity==='bodybuilding'){
+    const base = ['Biceps','Chest','Back','Legs','Shoulders','Triceps'];
+    const muscles = {};
+    base.forEach((m,i)=>{ muscles[m] = Math.max(20, Math.min(95, Math.round((avgBrain*0.5+avgHeart*0.5) + (seededCurve(hashSeed(m+activity),1)[0]-55)*0.6))); });
+    return {muscles};
+  }
+  if(activity==='running'){
+    const splits = tl.map(([m,b,h],i)=>({pace: +(6.2 - (h/100)*1.6).toFixed(2), hr:h}));
+    return {splits};
+  }
+  if(activity==='yoga'){
+    const calmScore = Math.max(5, 100-avgHeart);
+    return {calmScore};
+  }
+  if(activity==='hiit'){
+    const peak = Math.max(...tl.map(r=>r[2]));
+    const intervals = tl.map(([m,b,h])=>Math.round(100 - (peak-h)*0.15 - (h/peak)*10));
+    return {intervals:intervals.map(v=>Math.max(35,Math.min(100,v)))};
+  }
+  // general
+  const stages = tl.map(([m,b,h])=>stageFor(b,h,m));
+  const counts = {warmup:0,optimal:0,effort:0,risk:0};
+  stages.forEach(s=>counts[s]++);
+  const total = stages.length;
+  return {zones:{warmup:Math.round(counts.warmup/total*100), optimal:Math.round(counts.optimal/total*100), effort:Math.round(counts.effort/total*100), risk:Math.round(counts.risk/total*100)}};
+}
+
+function renderCategoryChart(activity, extra){
+  if(activity==='bodybuilding'){
+    const labels = Object.keys(extra.muscles);
+    const values = Object.values(extra.muscles);
+    return `<div style="display:flex; flex-direction:column; align-items:center;">
+      ${svgRadar(labels, values, JS_COLORS.brain)}
+      <p class="muted" style="text-align:center; margin-top:2px;">Pump map — brain+heart engagement by muscle group this session.</p>
+    </div>`;
+  }
+  if(activity==='running'){
+    return `${svgDualLine(extra.splits)}
+      <div class="zonekey" style="margin-top:6px;"><div class="k"><div class="sw" style="background:${JS_COLORS.heart};"></div>Heart strain</div><div class="k"><div class="sw" style="background:${JS_COLORS.teal};"></div>Pace (dashed, higher = faster)</div></div>`;
+  }
+  if(activity==='yoga'){
+    return `<div style="display:flex; align-items:center; gap:16px;">
+      ${svgRing(extra.calmScore, JS_COLORS.teal, 128, 'calm reached')}
+      <p class="muted" style="margin:0;">Calm score compares how low your heart strain settled versus the start of the practice. Higher means a deeper parasympathetic shift.</p>
+    </div>`;
+  }
+  if(activity==='hiit'){
+    return `${svgDecayBars(extra.intervals, JS_COLORS.amber)}
+      <p class="muted" style="margin-top:2px;">Power output per interval — the drop-off shows where nervous-system fatigue set in.</p>`;
+  }
+  const z = extra.zones;
+  return `<div style="display:flex; align-items:center; gap:16px;">
+    ${svgDonut([{value:z.optimal,colorHex:JS_COLORS.teal},{value:z.effort,colorHex:JS_COLORS.amber},{value:z.risk,colorHex:JS_COLORS.heart},{value:z.warmup,colorHex:'#3A473F'}], 120)}
+    <div class="zonekey" style="flex-direction:column; gap:6px; align-items:flex-start;">
+      <div class="k"><div class="sw" style="background:${JS_COLORS.teal};"></div>Optimal ${z.optimal}%</div>
+      <div class="k"><div class="sw" style="background:${JS_COLORS.amber};"></div>High effort ${z.effort}%</div>
+      <div class="k"><div class="sw" style="background:${JS_COLORS.heart};"></div>Risk ${z.risk}%</div>
+      <div class="k"><div class="sw" style="background:#3A473F;"></div>Warm-up ${z.warmup}%</div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   STATE
+========================================================================= */
+const state = {
+  screen:'consent',
+  consentGiven:false,
+  profile:{activities:['running','hiit'], frequency:3},
+  devices:[
+    {name:'Heart rate strap', status:'connected'},
+    {name:'Wrist motion band', status:'connected'},
+  ],
+  today:{activity:'running'},
+  libraryCat:'bodybuilding',
+  libraryEx:null,
+  historyFilter:'all',
+  session:{active:false, paused:false, name:'', minuteIdx:0},
+  alerts:[],
+  activeAlert:null,
+  recoveryChecked:{},
+  weekLog:[true,true,false,false,false,false,false], // Mon..Sun demo
+  historySessions:[
+    {label:'Mon', activity:'running',      avgBrain:52, avgHeart:58, risk:false, extra:{splits:[{pace:5.4,hr:48},{pace:5.3,hr:55},{pace:5.1,hr:60},{pace:5.0,hr:66},{pace:5.2,hr:62},{pace:4.9,hr:70}]}},
+    {label:'Tue', activity:'hiit',         avgBrain:74, avgHeart:80, risk:true,  extra:{intervals:[97,92,86,78,68,58]}},
+    {label:'Thu', activity:'yoga',         avgBrain:30, avgHeart:22, risk:false, extra:{calmScore:81}},
+    {label:'Fri', activity:'bodybuilding', avgBrain:63, avgHeart:57, risk:false, extra:{muscles:{Biceps:70,Chest:60,Back:75,Legs:50,Shoulders:58,Triceps:65}}},
+    {label:'Sat', activity:'general',      avgBrain:44, avgHeart:40, risk:false, extra:{zones:{warmup:18,optimal:56,effort:21,risk:5}}},
+  ],
+  eventLog:[],
+  liveTimer:null,
+};
+
+function logEvent(name, detail){ state.eventLog.unshift({name, detail}); }
+function go(screen){ state.screen = screen; if(screen!=='live') stopLiveTimer(); render(); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=> t.classList.remove('show'), 1900);
+}
+
+/* =========================================================================
+   SCREENS
+========================================================================= */
+function screenConsent(){
+  return `
+    <div class="topbar"><h2>Before you start</h2></div>
+    <p class="muted">NeuroPulse Fit reads your heart rate and movement patterns during training to infer your brain load and cardiac strain. It compares everything to your own baseline — never to anyone else's.</p>
+    <div class="card" style="margin:14px 0;">
+      <div class="row-line"><div>
+          <div style="font-size:13.5px;">Heart rate &amp; motion sensors</div>
+          <div class="label">Used to estimate strain and effort</div>
+        </div><div class="toggle ${state.consentGiven?'on':''}" onclick="toggleConsent()"><div class="knob"></div></div></div>
+      <div class="row-line"><div>
+          <div style="font-size:13.5px;">On-device only</div>
+          <div class="label">Your readings never leave this device</div>
+        </div><span class="pill teal">Always on</span></div>
+    </div>
+    <p class="muted" style="font-size:11.5px;">These are inferred wellness signals, not a medical diagnosis. If something feels seriously wrong, stop and seek medical help rather than relying on this app.</p>
+    <div class="btn-row">
+      <button class="btn primary block" ${state.consentGiven?'':'disabled'} onclick="logEvent('consent_confirmed'); go('profile')">Continue</button>
+    </div>`;
+}
+function toggleConsent(){ state.consentGiven = !state.consentGiven; render(); }
+
+function screenProfile(){
+  const acts = state.profile.activities;
+  return `
+    <div class="topbar"><h2>Your training</h2></div>
+    <div class="label" style="margin-bottom:8px;">What do you train? (select all that apply)</div>
+    <div class="chip-grid" style="margin-bottom:18px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${acts.includes(a.id)?'on':''}" onclick="toggleActivity('${a.id}')">${a.name}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:8px;">How often per week?</div>
+    <div class="chip-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      ${[2,3,4,5].map(n=>`<div class="chip ${state.profile.frequency===n?'on':''}" onclick="setFrequency(${n})">${n}${n===5?'+':''}x</div>`).join('')}
+    </div>
+    <p class="muted">We'll use this to set realistic baselines and to tell you when a rest day is worth taking.</p>
+    <div class="btn-row">
+      <button class="back" onclick="go('consent')" style="margin-right:auto;">←</button>
+      <button class="btn primary" ${acts.length?'':'disabled'} onclick="go('deviceCheck')">Check devices</button>
+    </div>`;
+}
+function toggleActivity(id){
+  const a = state.profile.activities;
+  const i = a.indexOf(id);
+  if(i>-1) a.splice(i,1); else a.push(id);
+  render();
+}
+function setFrequency(n){ state.profile.frequency = n; render(); }
+
+function screenDeviceCheck(){
+  const labelFor = s=>({connected:'Connected', weak:'Weak signal', disconnected:'Disconnected'}[s]);
+  const iconFor = s=>s==='connected'?'teal':s==='weak'?'amber':'heart';
+  return `
+    <div class="topbar"><h2>Device check</h2></div>
+    <p class="muted">Confirm your sensors before starting. A heart rate strap or watch gives the most reliable reading.</p>
+    <div class="card" style="margin-top:6px;">
+      ${state.devices.map((d,i)=>`
+        <div class="row-line">
+          <div style="display:flex; align-items:center; gap:10px;"><div class="dot ${iconFor(d.status)}"></div>
+            <div><div style="font-size:13.5px;">${d.name}</div><div class="label">${labelFor(d.status)}</div></div></div>
+          ${d.status!=='connected'?`<button class="btn ghost" style="padding:6px 10px; font-size:12px;" onclick="retryDevice(${i})">Retry</button>`:''}
+        </div>`).join('')}
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('profile')" style="margin-right:auto;">←</button>
+      <button class="btn primary" onclick="go('sessionSetup')">Continue</button>
+    </div>`;
+}
+function retryDevice(i){ state.devices[i].status='connected'; render(); }
+
+function screenSessionSetup(){
+  const acts = ACTIVITIES.filter(a=>state.profile.activities.includes(a.id));
+  return `
+    <div class="topbar"><h2>Start a session</h2></div>
+    <div class="label" style="margin-bottom:8px;">Today I'm training</div>
+    <div class="chip-grid" style="grid-template-columns:1fr; gap:8px; margin-bottom:16px;">
+      ${acts.map(a=>`<div class="chip ${state.today.activity===a.id?'on':''}" style="text-align:left; padding:12px 14px;" onclick="state.today.activity='${a.id}'; render();">
+        <div style="font-weight:500;">${a.name}</div><div class="label" style="margin-top:2px;">${a.hint}</div></div>`).join('')}
+    </div>
+    <p class="muted">Your brain and heart thresholds will be tuned to this activity — a heart rate that's a red flag in yoga can be completely normal in HIIT.</p>
+    <div class="card" style="cursor:pointer; margin-bottom:6px;" onclick="openLibraryCategory(state.today.activity); go('library')">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><div style="font-size:13px; font-weight:500;">View workouts &amp; technique guide</div><div class="label">See the moves, positions and fixes for this activity</div></div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('deviceCheck')" style="margin-right:auto;">←</button>
+      <button class="btn primary" onclick="startSession()">Start training</button>
+    </div>`;
+}
+function startSession(){
+  const a = ACTIVITIES.find(a=>a.id===state.today.activity);
+  state.session = {active:true, paused:false, name:a.name, minuteIdx:0};
+  state.alerts = [];
+  state.recoveryChecked = {};
+  logEvent('session_started', a.name);
+  go('live');
+}
+
+function currentReading(){
+  const tl = TIMELINES[state.today.activity];
+  const i = Math.min(state.session.minuteIdx, tl.length-1);
+  const [minute, brain, heart] = tl[i];
+  return {minute, brain, heart, isLast:i===tl.length-1};
+}
+
+function maybeRaiseAlert(){
+  const {brain,heart,minute} = currentReading();
+  const stage = stageFor(brain,heart,minute);
+  if(stage==='risk' && !state.alerts.some(a=>!a.dismissed)){
+    const p = RISK_PROFILE[state.today.activity];
+    const id = 'a'+Date.now();
+    state.alerts.push({
+      id, ramp: p.trigger==='brain'?'brain':'heart',
+      metricLabel: p.trigger==='brain'?'Brain load':p.trigger==='heart'?'Heart strain':'Brain load & heart strain',
+      brain, heart, why:p.why, recs:p.recs, read:false, dismissed:false,
+    });
+    logEvent('risk_alert_raised', state.today.activity);
+    showToast('New alert — overreaching risk detected');
+  }
+}
+
+function startLiveTimer(){
+  stopLiveTimer();
+  state.liveTimer = setInterval(()=>{
+    if(!state.session.active || state.session.paused) return;
+    const tl = TIMELINES[state.today.activity];
+    if(state.session.minuteIdx < tl.length-1) state.session.minuteIdx++;
+    maybeRaiseAlert();
+    render();
+  }, 2200);
+}
+function stopLiveTimer(){ if(state.liveTimer){ clearInterval(state.liveTimer); state.liveTimer=null; } }
+
+function screenLive(){
+  const {brain,heart,minute,isLast} = currentReading();
+  const stage = stageFor(brain,heart,minute);
+  const meta = STAGE_META[stage];
+  const activeAlerts = state.alerts.filter(a=>!a.dismissed);
+  return `
+    <div class="topbar">
+      <h2>${state.session.name || 'Live session'}</h2>
+      <button class="btn ghost" style="padding:6px 12px; font-size:12px;" onclick="togglePause()">${state.session.paused?'Resume':'Pause'}</button>
+    </div>
+    ${state.session.paused?`<div class="banner" style="background:var(--surface-2); color:var(--text-dim);">Paused — signal not updating.</div>`:''}
+    <div class="stage-banner ${meta.cls}">
+      <div class="stage-dot"></div>
+      <div><div class="stage-title">${meta.label}</div><div class="stage-sub">${meta.sub}</div></div>
+    </div>
+    <div class="gauge-grid">
+      <div class="gauge brain">
+        <div class="g-head"><div class="g-dot"></div><div class="g-label">Brain level</div></div>
+        <div class="g-num">${brain}</div>
+        <div class="g-status" style="color:var(--brain);">${statusFor(brain)}</div>
+        <div class="g-bar"><div class="fill" style="width:${brain}%;"></div></div>
+      </div>
+      <div class="gauge heart">
+        <div class="g-head"><div class="g-dot"></div><div class="g-label">Heart level</div></div>
+        <div class="g-num">${heart}</div>
+        <div class="g-status" style="color:var(--heart);">${statusFor(heart)}</div>
+        <div class="g-bar"><div class="fill" style="width:${heart}%;"></div></div>
+      </div>
+    </div>
+    <div class="card signal-card">
+      <div class="label" style="margin-bottom:6px;">Minute ${minute} · tap to see today's activity</div>
+      <svg width="100%" height="42" viewBox="0 0 300 42">
+        <polyline points="${sparkPoints(state.today.activity,'brain')}" fill="none" stroke="var(--brain)" stroke-width="2"/>
+        <polyline points="${sparkPoints(state.today.activity,'heart')}" fill="none" stroke="var(--heart)" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="label" style="margin:14px 0 8px;">Alerts</div>
+    ${activeAlerts.length===0?`<p class="muted">No active alerts — signals within your normal range.</p>`:activeAlerts.map(a=>`
+      <div class="alert-item ${a.ramp}" onclick="openAlert('${a.id}')">
+        <span>${a.metricLabel} rising — possible overreaching</span>
+        <span class="x" onclick="event.stopPropagation(); dismissAlert('${a.id}')">✕</span>
+      </div>`).join('')}
+    ${isLast?`<p class="muted" style="margin-top:6px;">End of this session's data.</p>`:''}
+    <div class="btn-row" style="padding-top:0;">
+      <button class="btn ghost block" onclick="endSession()">End session</button>
+    </div>`;
+}
+function sparkPoints(activity, key){
+  const tl = TIMELINES[activity];
+  const n = tl.length-1;
+  return tl.map((row,i)=>{
+    const v = key==='brain'?row[1]:row[2];
+    const x = (i/n)*300;
+    const y = 40 - (v/100)*36;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+}
+function togglePause(){ state.session.paused=!state.session.paused; logEvent(state.session.paused?'session_paused':'session_resumed'); render(); }
+function dismissAlert(id){ const a=state.alerts.find(a=>a.id===id); a.dismissed=true; showToast('Alert dismissed'); render(); }
+function openAlert(id){ state.activeAlert=id; const a=state.alerts.find(a=>a.id===id); a.read=true; go('alertExplain'); }
+
+function screenAlertExplain(){
+  const a = state.alerts.find(a=>a.id===state.activeAlert) || state.alerts[state.alerts.length-1];
+  if(!a) return `<div class="topbar"><button class="back" onclick="go('live')">←</button><h2>Alert</h2></div><p class="muted">No alert selected.</p>`;
+  return `
+    <div class="topbar"><button class="back" onclick="go('live')">←</button><h2>Why this fired</h2></div>
+    <div class="card" style="background:var(--${a.ramp}-dim); border-color:transparent; margin-bottom:14px;">
+      <div class="label" style="color:inherit; opacity:.85;">${a.metricLabel}</div>
+      <div style="font-size:14px; font-weight:600; margin-top:4px;">Overreaching risk detected</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">What we saw</div>
+    <p class="muted" style="margin-top:0;">${a.why}</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 16px;">
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Brain level</div><div style="font-size:15px; font-weight:600; margin-top:4px; color:var(--brain);">${a.brain}</div></div>
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Heart level</div><div style="font-size:15px; font-weight:600; margin-top:4px; color:var(--heart);">${a.heart}</div></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">What to do now</div>
+    <div class="card" style="margin-bottom:6px;">
+      ${a.recs.map(k=>{
+        const r = RECOVERY_LIBRARY[k];
+        const done = !!state.recoveryChecked[a.id+'_'+k];
+        return `<div class="recovery-item">
+          <div class="check ${done?'done':''}" onclick="toggleRecovery('${a.id}','${k}')">${done?'✓':''}</div>
+          <div><div style="${done?'color:var(--text-dim); text-decoration:line-through;':''}">${r.title}</div><div class="label" style="margin-top:2px;">${r.detail}</div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <p class="muted" style="font-size:11px;">This is an inferred signal from your own baseline, not a medical diagnosis. If you feel chest pain, dizziness, or breathlessness beyond normal effort, stop training and seek medical care.</p>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="dismissAlert('${a.id}'); go('live')">Dismiss</button>
+      <button class="btn primary" onclick="go('live')">Back to session</button>
+    </div>`;
+}
+function toggleRecovery(alertId,key){
+  const k = alertId+'_'+key;
+  state.recoveryChecked[k] = !state.recoveryChecked[k];
+  if(state.recoveryChecked[k]) logEvent('recovery_action_logged', key);
+  render();
+}
+
+function endSession(){
+  stopLiveTimer();
+  logEvent('session_ended', state.today.activity);
+  state.session.active = false;
+  const tl = TIMELINES[state.today.activity];
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  const extra = buildCategoryExtra(state.today.activity, tl);
+  state.historySessions.unshift({label:'Today', activity:state.today.activity, avgBrain, avgHeart, risk: state.alerts.length>0, extra});
+  const dow = new Date().getDay(); // 0 sun .. 6 sat -> map to Mon..Sun index
+  const idx = dow===0?6:dow-1;
+  state.weekLog[idx] = true;
+  go('summary');
+}
+
+function screenSummary(){
+  const tl = TIMELINES[state.today.activity];
+  const stages = tl.map(([m,b,h])=>stageFor(b,h,m));
+  const counts = {warmup:0,optimal:0,effort:0,risk:0};
+  stages.forEach(s=>counts[s]++);
+  const total = stages.length;
+  const colors = {warmup:'var(--surface-3)', optimal:'var(--teal)', effort:'var(--amber)', risk:'var(--heart)'};
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  const doneCount = state.weekLog.filter(Boolean).length;
+  const recoveryLogged = Object.values(state.recoveryChecked).filter(Boolean).length;
+  const riskHappened = state.alerts.length>0;
+  const catExtra = buildCategoryExtra(state.today.activity, tl);
+  return `
+    <div class="topbar"><h2>Session summary</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-size:15px; font-weight:600; text-transform:capitalize;">${state.today.activity.replace('bodybuilding','Bodybuilding')}</div>
+      <div class="label" style="margin-top:2px;">Ended ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · avg brain ${avgBrain} · avg heart ${avgHeart}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Time in each stage</div>
+    <div class="zonebar">${Object.keys(counts).map(k=>`<span style="width:${(counts[k]/total*100).toFixed(0)}%; background:${colors[k]};"></span>`).join('')}</div>
+    <div class="zonekey" style="margin-bottom:14px;">
+      ${Object.keys(STAGE_META).map(k=>`<div class="k"><div class="sw" style="background:${colors[k]};"></div>${STAGE_META[k].label}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">This session's signature</div>
+    <div class="card" style="margin-bottom:14px;">${renderCategoryChart(state.today.activity, catExtra)}</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Risk alerts</span><span>${state.alerts.length}</span></div>
+      <div class="stat-row"><span>Recovery actions logged</span><span>${recoveryLogged}</span></div>
+    </div>
+    ${riskHappened?`<div class="banner">⚠ Overreaching was detected this session — consider an easier session or full rest next time before training ${state.today.activity} again.</div>`:`<div class="banner" style="background:var(--teal-dim); color:var(--teal);">Session stayed within your normal working range.</div>`}
+    <div class="label" style="margin-bottom:6px;">This week (goal: ${state.profile.frequency}x)</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="muted">${doneCount} of ${state.profile.frequency} sessions logged</div>
+      <div class="weekgoal">${state.weekLog.map(d=>`<div class="d ${d?'on':''}"></div>`).join('')}</div>
+    </div>
+    <div class="btn-row"><button class="btn primary block" onclick="go('sessionSetup')">Start another session</button></div>`;
+}
+
+function screenHistory(){
+  const filter = state.historyFilter;
+  const allSessions = state.historySessions.slice(0,8);
+  const sessions = filter==='all' ? allSessions : allSessions.filter(s=>s.activity===filter);
+  const filterChips = [{id:'all',name:'All'}, ...ACTIVITIES];
+  const latestForFilter = filter!=='all' ? sessions[0] : null;
+
+  return `
+    <div class="topbar"><h2>History</h2></div>
+    <div class="chip-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
+      ${filterChips.map(c=>`<div class="chip ${filter===c.id?'on':''}" onclick="setHistoryFilter('${c.id}')">${c.name}</div>`).join('')}
+    </div>
+    ${filter==='all' ? `
+      <p class="muted" style="margin-bottom:10px;">Brain and heart average per session, most recent first.</p>
+      <div class="card" style="margin-bottom:16px;">
+        <svg width="100%" height="120" viewBox="0 0 300 120">
+          ${allSessions.map((s,i)=>{
+            const gap = 300/allSessions.length; const x = i*gap + gap*0.28; const w = gap*0.2;
+            const hB = (s.avgBrain/100)*100; const hH=(s.avgHeart/100)*100;
+            return `<rect x="${x}" y="${110-hB}" width="${w}" height="${hB}" fill="var(--brain)" rx="2"/>
+                    <rect x="${x+w+3}" y="${110-hH}" width="${w}" height="${hH}" fill="var(--heart)" rx="2"/>`;
+          }).join('')}
+          <line x1="0" y1="110" x2="300" y2="110" stroke="var(--border)" stroke-width="1"/>
+        </svg>
+        <div style="display:flex; justify-content:space-around; margin-top:4px;">
+          ${allSessions.map(s=>`<span class="label">${s.label}</span>`).join('')}
+        </div>
+        <div class="zonekey" style="margin-top:8px;"><div class="k"><div class="sw" style="background:var(--brain);"></div>Brain</div><div class="k"><div class="sw" style="background:var(--heart);"></div>Heart</div></div>
+      </div>` : `
+      <p class="muted" style="margin-bottom:10px; text-transform:capitalize;">${filter} — latest session signature (${latestForFilter?latestForFilter.label:'no sessions yet'})</p>
+      <div class="card" style="margin-bottom:16px;">
+        ${latestForFilter ? renderCategoryChart(filter, latestForFilter.extra) : `<p class="muted">Complete a ${filter} session to see its chart here.</p>`}
+      </div>`}
+    <div class="label" style="margin-bottom:6px;">Sessions</div>
+    ${sessions.length===0?`<p class="muted">No sessions logged yet for this filter.</p>`:sessions.map(s=>`
+      <div class="row-line">
+        <div><div style="font-size:13.5px; text-transform:capitalize;">${s.activity}</div><div class="label">${s.label} · brain ${s.avgBrain} · heart ${s.avgHeart}</div></div>
+        ${s.risk?'<span class="pill heart">Risk flagged</span>':'<span class="pill teal">Within range</span>'}
+      </div>`).join('')}
+    <p class="muted" style="margin-top:14px;">Training ${state.profile.activities.length} activity type${state.profile.activities.length===1?'':'s'} at a goal of ${state.profile.frequency}x/week. Consistent easy sessions between hard ones tend to reduce how often risk alerts fire.</p>`;
+}
+function setHistoryFilter(id){ state.historyFilter = id; render(); }
+
+function screenLibrary(){
+  const cat = state.libraryCat;
+  const list = EXERCISE_LIBRARY[cat];
+  return `
+    <div class="topbar"><h2>Workout &amp; position library</h2></div>
+    <div class="chip-grid" style="margin-bottom:14px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${cat===a.id?'on':''}" onclick="openLibraryCategory('${a.id}')">${a.name}</div>`).join('')}
+    </div>
+    <p class="muted" style="margin-bottom:10px;">Tap any move to see why it's meant to feel the way it does, and what to do when it doesn't.</p>
+    ${list.map(ex=>`
+      <div class="player-row row-line" style="cursor:pointer;" onclick="openExercise('${ex.id}')">
+        <div style="flex:1;">
+          <div style="font-size:13.5px;">${ex.name}</div>
+          <div class="label">${ex.tag}</div>
+        </div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>`).join('')}`;
+}
+function openLibraryCategory(id){ state.libraryCat = id; render(); }
+function openExercise(id){ state.libraryEx = id; go('exerciseDetail'); }
+
+function screenExerciseDetail(){
+  const list = EXERCISE_LIBRARY[state.libraryCat];
+  const ex = list.find(e=>e.id===state.libraryEx) || list[0];
+  return `
+    <div class="topbar"><button class="back" onclick="go('library')">←</button><h2>${ex.name}</h2></div>
+    <span class="pill teal" style="margin-bottom:12px; display:inline-block;">${ex.tag}</span>
+    <div class="card" style="margin:10px 0 14px;">
+      <div class="label" style="margin-bottom:6px;">Typical brain vs heart pattern during this move</div>
+      ${(()=>{ const seed=hashSeed(ex.id); const b=seededCurve(seed,9), h=seededCurve(seed+777,9);
+        return `<svg width="100%" height="60" viewBox="0 0 280 60">
+          <polyline points="${sparkPathFromValues(b,280,56)}" fill="none" stroke="var(--brain)" stroke-width="2"/>
+          <polyline points="${sparkPathFromValues(h,280,56)}" fill="none" stroke="var(--heart)" stroke-width="2"/>
+        </svg>`; })()}
+      <div class="zonekey" style="margin-top:4px;"><div class="k"><div class="sw" style="background:var(--brain);"></div>Brain</div><div class="k"><div class="sw" style="background:var(--heart);"></div>Heart</div></div>
+    </div>
+    <div class="label" style="margin:10px 0 6px;">Why it works</div>
+    <div class="card" style="margin-bottom:10px; border-left:3px solid var(--brain);">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;"><div class="dot brain"></div><div style="font-size:12.5px; font-weight:600; color:var(--brain);">Brain</div></div>
+      <div class="muted" style="margin:0;">${ex.brainRole}</div>
+    </div>
+    <div class="card" style="margin-bottom:14px; border-left:3px solid var(--heart);">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;"><div class="dot heart"></div><div style="font-size:12.5px; font-weight:600; color:var(--heart);">Heart</div></div>
+      <div class="muted" style="margin:0;">${ex.heartRole}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">When it's not working</div>
+    <div class="card" style="background:var(--amber-dim); border-color:transparent; margin-bottom:14px;">
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">${ex.problem.title}</div>
+      <div class="muted" style="margin:0; color:#e4c896;">${ex.problem.why}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">How to fix it</div>
+    <div class="card" style="margin-bottom:6px;">
+      ${ex.solution.map(s=>`<div class="recovery-item"><div class="check" style="border-color:var(--teal);"></div><div>${s}</div></div>`).join('')}
+    </div>
+    <div class="btn-row"><button class="btn primary block" onclick="go('library')">Back to library</button></div>`;
+}
+
+function screenSettings(){
+  const labelFor = s=>({connected:'Connected', weak:'Weak signal', disconnected:'Disconnected'}[s]);
+  return `
+    <div class="topbar"><h2>Settings</h2></div>
+    <div class="label" style="margin-bottom:6px;">Devices</div>
+    <div class="card" style="margin-bottom:16px;">
+      ${state.devices.map(d=>`<div class="row-line"><div style="display:flex; align-items:center; gap:10px;"><div class="dot ${d.status==='connected'?'teal':d.status==='weak'?'amber':'heart'}"></div><div style="font-size:13px;">${d.name}</div></div><span class="label">${labelFor(d.status)}</span></div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Your activities</div>
+    <div class="chip-grid" style="margin-bottom:16px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${state.profile.activities.includes(a.id)?'on':''}" onclick="toggleActivity('${a.id}')">${a.name}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Weekly goal</div>
+    <div class="chip-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      ${[2,3,4,5].map(n=>`<div class="chip ${state.profile.frequency===n?'on':''}" onclick="setFrequency(${n})">${n}${n===5?'+':''}x</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Data</div>
+    <div class="card"><div class="row-line"><div style="font-size:13px;">Stored on this device only</div><span class="pill teal">Private</span></div></div>`;
+}
+
+/* =========================================================================
+   RENDER
+========================================================================= */
+const SCREENS = {
+  consent: screenConsent, profile: screenProfile, deviceCheck: screenDeviceCheck,
+  sessionSetup: screenSessionSetup, live: screenLive, alertExplain: screenAlertExplain,
+  summary: screenSummary, history: screenHistory, library: screenLibrary,
+  exerciseDetail: screenExerciseDetail, settings: screenSettings,
+};
+const NAV = [
+  {id:'live', label:'Live', icon:'live', screen:'live'},
+  {id:'library', label:'Library', icon:'library', screen:'library'},
+  {id:'history', label:'History', icon:'history', screen:'history'},
+  {id:'settings', label:'Settings', icon:'settings', screen:'settings'},
+];
+const ICONS = {
+  live: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>',
+  library: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>',
+  history: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>',
+  settings: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.3-.9c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.6z"/></svg>',
+};
+function render(){
+  const showNav = ['live','library','history','settings'].includes(state.screen);
+  const screensEl = document.getElementById('screens');
+  screensEl.innerHTML = Object.keys(SCREENS).map(key =>
+    `<div class="screen ${state.screen===key?'active':''}" data-screen="${key}">${SCREENS[key]()}</div>`
+  ).join('');
+  const navbarEl = document.getElementById('navbar');
+  navbarEl.style.display = showNav ? 'flex' : 'none';
+  navbarEl.innerHTML = NAV.map(n => `
+    <div class="navitem ${state.screen===n.screen ? 'active':''}" onclick="go('${n.screen}')">
+      ${ICONS[n.icon]}<span>${n.label}</span>
+    </div>`).join('');
+  if(state.screen==='live' && state.session.active) startLiveTimer(); else stopLiveTimer();
+}
+
+/* =========================================================================
+   MODE SWITCH + FIGMA-STYLE FRAME BOARD
+========================================================================= */
+function setMode(mode){
+  document.getElementById('appWrap').classList.toggle('active', mode==='app');
+  document.getElementById('boardWrap').classList.toggle('active', mode==='board');
+  document.getElementById('modeAppBtn').classList.toggle('active', mode==='app');
+  document.getElementById('modeBoardBtn').classList.toggle('active', mode==='board');
+  if(mode==='board') renderBoard();
+}
+const FRAME_ORDER = [
+  {key:'consent', title:'Consent'},
+  {key:'profile', title:'Your training'},
+  {key:'deviceCheck', title:'Device check'},
+  {key:'sessionSetup', title:'Start a session'},
+  {key:'live', title:'Live — brain & heart'},
+  {key:'alertExplain', title:'Risk & recovery'},
+  {key:'summary', title:'Session summary'},
+  {key:'library', title:'Workout library'},
+  {key:'exerciseDetail', title:'Move detail — why & fix'},
+  {key:'history', title:'History'},
+  {key:'settings', title:'Settings'},
+];
+function renderBoard(){
+  // build a temporary snapshot state so frames show meaningful demo content
+  const snap = JSON.parse(JSON.stringify(state));
+  snap.profile.activities = ['bodybuilding','running','yoga','hiit'];
+  snap.today.activity = 'hiit';
+  snap.session = {active:true, paused:false, name:'HIIT', minuteIdx:5};
+  snap.alerts = [{id:'demo', ramp:'heart', metricLabel:'Brain load & heart strain', brain:88, heart:90, why:RISK_PROFILE.hiit.why, recs:RISK_PROFILE.hiit.recs, read:true, dismissed:false}];
+  snap.activeAlert = 'demo';
+  snap.recoveryChecked = {};
+  snap.consentGiven = true;
+  snap.libraryCat = 'bodybuilding';
+  snap.libraryEx = 'concentration-curl';
+
+  const oldState = JSON.stringify(state);
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state, snap);
+
+  const canvas = document.getElementById('boardCanvas');
+  canvas.innerHTML = FRAME_ORDER.map((f,i)=>`
+    <div class="frame-col">
+      <div class="frame">
+        <div class="frame-label"><span class="fnum">${String(i+1).padStart(2,'0')}</span> ${f.title}</div>
+        <div class="frame-box">
+          <div class="fake-status"><span>9:41</span><span>●●● 100%</span></div>
+          <div class="screen active">${SCREENS[f.key]()}</div>
+        </div>
+        ${i<FRAME_ORDER.length-1?'<div class="frame-arrow">→</div>':''}
+      </div>
+    </div>`).join('');
+
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state, JSON.parse(oldState));
+}
+
+render();
+</script>
+</body>
+</html>
