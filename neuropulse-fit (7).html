@@ -1,0 +1,2012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>NeuroPulse Fit — Brain &amp; Heart coach for your training</title>
+<meta name="theme-color" content="#0A100C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NeuroPulse Fit">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A100C; --surface:#131B16; --surface-2:#1B2620; --surface-3:#233028;
+    --border:rgba(255,255,255,0.08); --border-strong:rgba(255,255,255,0.16);
+    --text:#EAF1EC; --text-dim:#95A69C; --text-faint:#5A6B61;
+    --teal:#33C793; --teal-dim:rgba(51,199,147,0.14);
+    --brain:#9B87F5; --brain-dim:rgba(155,135,245,0.15);
+    --heart:#F2637A; --heart-dim:rgba(242,99,122,0.15);
+    --amber:#E3A23C; --amber-dim:rgba(227,162,60,0.15);
+    --blue:#5B9FE0; --blue-dim:rgba(91,159,224,0.15);
+    --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    margin:0; min-height:100vh; min-height:100dvh;
+    background:
+      radial-gradient(circle at 12% -8%, rgba(51,199,147,0.16), transparent 42%),
+      radial-gradient(circle at 92% 108%, rgba(155,135,245,0.12), transparent 40%),
+      radial-gradient(circle at 18% 0%, #101c15 0%, var(--bg) 55%);
+    font-family:'Inter',sans-serif; color:var(--text);
+    display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  h1,h2,h3,.num,.brand{font-family:'Space Grotesk',sans-serif;}
+  .num{font-variant-numeric:tabular-nums;}
+  button{font-family:inherit; cursor:pointer;}
+  ::selection{background:var(--teal-dim);}
+
+  /* ---------------- top-level mode switch ---------------- */
+  .modebar{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:50;
+    display:flex; gap:4px; background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:100px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .modebar button{
+    border:none; background:transparent; color:var(--text-dim); font-size:12.5px; font-weight:500;
+    padding:8px 16px; border-radius:100px; transition:.15s;
+  }
+  .modebar button.active{background:var(--teal); color:#04241a;}
+
+  /* ================= APP (phone / dashboard) ================= */
+  .app-wrap{display:none; width:100%; height:100%; align-items:center; justify-content:center;}
+  .app-wrap.active{display:flex;}
+
+  .phone{
+    width:100%; max-width:400px; height:calc(100vh - 24px); height:calc(100dvh - 24px); max-height:840px;
+    background:var(--bg); border-radius:30px;
+    border:1px solid var(--border-strong); position:relative; overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+    display:flex; flex-direction:column;
+  }
+  @media (min-width:480px){ .phone{ border-radius:44px; } }
+  .statusbar{
+    display:flex; justify-content:space-between; padding:16px 26px 6px;
+    font-size:13px; color:var(--text-dim); flex-shrink:0;
+  }
+  .screens{flex:1; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    padding:8px 20px 0; overflow-y:auto; opacity:0; pointer-events:none;
+    transform:translateY(10px);
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .screen.active{opacity:1; transform:translateY(0); pointer-events:auto;}
+  .screen::-webkit-scrollbar{display:none;}
+
+  .topbar{display:flex; align-items:center; gap:10px; padding:6px 0 16px; flex-shrink:0;}
+  .topbar h2{font-size:17px; font-weight:600; margin:0; flex:1; padding-right:30px;}
+  .back{width:28px; height:28px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:14px; flex-shrink:0; transition:transform .12s ease;}
+  .back:active{transform:scale(.88);}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+  .btn{
+    border-radius:14px; border:1px solid var(--border-strong); background:var(--surface-2);
+    color:var(--text); padding:14px 20px; font-size:14px; font-weight:600; text-align:center;
+    transition:transform .12s ease, box-shadow .15s ease, opacity .15s ease;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn:active{transform:scale(.96); opacity:0.9;}
+  .btn .bicon{width:16px; height:16px; flex-shrink:0;}
+  .btn.primary{background:linear-gradient(135deg, var(--teal), #1a9c74); color:#04241a; border-color:transparent; box-shadow:0 8px 22px rgba(51,199,147,.3);}
+  .btn.primary:active{box-shadow:0 4px 12px rgba(51,199,147,.24);}
+  .btn.danger{background:linear-gradient(135deg, var(--heart), #d24862); color:#2a0a10; border-color:transparent; box-shadow:0 8px 22px rgba(242,99,122,.28);}
+  .btn.ghost{background:transparent; border-color:var(--border);}
+  .btn.block{width:100%;}
+  .btn[disabled]{opacity:0.35; pointer-events:none;}
+  .btn-row{display:flex; gap:10px; margin-top:auto; padding:16px 0 22px;}
+
+  .label{font-size:11.5px; color:var(--text-faint); letter-spacing:.01em;}
+  .muted{color:var(--text-dim); font-size:13px; line-height:1.5;}
+
+  .pill{font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; display:inline-block;}
+  .pill.teal{background:var(--teal-dim); color:var(--teal);}
+  .pill.amber{background:var(--amber-dim); color:var(--amber);}
+  .pill.heart{background:var(--heart-dim); color:var(--heart);}
+  .pill.brain{background:var(--brain-dim); color:var(--brain);}
+  .pill.blue{background:var(--blue-dim); color:var(--blue);}
+
+  .chip{border:1px solid var(--border-strong); border-radius:12px; padding:10px 12px; font-size:13px; text-align:center; background:var(--surface-2); color:var(--text-dim); transition:transform .1s ease, background .15s ease, border-color .15s ease, color .15s ease;}
+  .chip:active{transform:scale(.95);}
+  .chip.on{background:var(--teal-dim); border-color:var(--teal); color:var(--teal); box-shadow:0 0 0 1px var(--teal) inset;}
+  .chip-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+
+  .toggle{width:42px; height:24px; border-radius:14px; background:var(--surface-2); border:1px solid var(--border-strong); position:relative; flex-shrink:0; transition:background .15s ease, border-color .15s ease;}
+  .toggle .knob{width:18px; height:18px; border-radius:50%; background:var(--text-faint); position:absolute; top:2px; left:2px; transition:.18s cubic-bezier(.34,1.56,.64,1);}
+  .toggle.on{background:var(--teal-dim); border-color:var(--teal);}
+  .toggle.on .knob{left:21px; background:var(--teal);}
+
+  .row-line{display:flex; align-items:center; justify-content:space-between; padding:13px 0; border-bottom:1px solid var(--border);}
+  .row-line:last-child{border-bottom:none;}
+  .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot.teal{background:var(--teal);} .dot.amber{background:var(--amber);} .dot.heart{background:var(--heart);} .dot.brain{background:var(--brain);}
+
+  /* --- stage banner (pulse speed communicates urgency) --- */
+  .stage-banner{border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px;}
+  .stage-banner.warmup{background:var(--surface-2); border:1px solid var(--border-strong);}
+  .stage-banner.optimal{background:var(--teal-dim); border:1px solid transparent;}
+  .stage-banner.effort{background:var(--amber-dim); border:1px solid transparent;}
+  .stage-banner.risk{background:var(--heart-dim); border:1px solid transparent;}
+  .stage-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .stage-banner.warmup .stage-dot{background:var(--text-dim);}
+  .stage-banner.optimal .stage-dot{background:var(--teal); animation:pulseTeal 2.2s ease-out infinite;}
+  .stage-banner.effort .stage-dot{background:var(--amber); animation:pulseAmber 1.5s ease-out infinite;}
+  .stage-banner.risk .stage-dot{background:var(--heart); animation:pulseHeart 0.9s ease-out infinite;}
+  @keyframes pulseTeal{0%{box-shadow:0 0 0 0 rgba(51,199,147,.5);}70%{box-shadow:0 0 0 10px rgba(51,199,147,0);}100%{box-shadow:0 0 0 0 rgba(51,199,147,0);}}
+  @keyframes pulseAmber{0%{box-shadow:0 0 0 0 rgba(227,162,60,.5);}70%{box-shadow:0 0 0 10px rgba(227,162,60,0);}100%{box-shadow:0 0 0 0 rgba(227,162,60,0);}}
+  @keyframes pulseHeart{0%{box-shadow:0 0 0 0 rgba(242,99,122,.55);}60%{box-shadow:0 0 0 12px rgba(242,99,122,0);}100%{box-shadow:0 0 0 0 rgba(242,99,122,0);}}
+  .stage-banner .stage-title{font-weight:600; font-size:14px;}
+  .stage-banner .stage-sub{font-size:11.5px; color:var(--text-dim); margin-top:1px;}
+
+  /* --- gauges (glow ring reflects live status) --- */
+  .gauge-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+  .gauge{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 14px; transition:box-shadow .4s ease, border-color .4s ease;}
+  .gauge .g-head{display:flex; align-items:center; gap:6px; margin-bottom:8px;}
+  .gauge .g-head .g-dot{width:7px; height:7px; border-radius:50%;}
+  .gauge.brain .g-head .g-dot{background:var(--brain);}
+  .gauge.heart .g-head .g-dot{background:var(--heart);}
+  .gauge .g-label{font-size:11.5px; color:var(--text-dim); font-weight:500;}
+  .gauge .g-num{font-size:26px; font-weight:600; line-height:1;}
+  .gauge .g-status{font-size:11px; margin-top:3px;}
+  .g-bar{height:6px; border-radius:4px; background:var(--surface-3); margin-top:9px; overflow:hidden;}
+  .g-bar .fill{height:100%; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1);}
+  .gauge.brain .g-bar .fill{background:var(--brain);}
+  .gauge.heart .g-bar .fill{background:var(--heart);}
+
+  .metric-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
+  .metric{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;}
+  .metric .num{font-size:20px; font-weight:600; margin-top:2px;}
+
+  .signal-card{margin-bottom:14px; cursor:pointer;}
+  .alert-item{display:flex; align-items:flex-start; justify-content:space-between; gap:8px; border-radius:11px; padding:11px 12px; font-size:12.5px; margin-bottom:8px; cursor:pointer; transition:transform .1s ease;}
+  .alert-item:active{transform:scale(.98);}
+  .alert-item.amber{background:var(--amber-dim); color:#f0c589;}
+  .alert-item.heart{background:var(--heart-dim); color:#f6a3b1;}
+  .alert-item.brain{background:var(--brain-dim); color:#c6bafb;}
+  .alert-item .x{opacity:.7; font-size:13px; flex-shrink:0;}
+  .banner{background:var(--heart-dim); color:var(--heart); font-size:12px; padding:9px 12px; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+
+  .recovery-item{display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .recovery-item:last-child{border-bottom:none;}
+  .check{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--border-strong); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent; transition:transform .15s cubic-bezier(.34,1.56,.64,1), background .15s ease;}
+  .check.done{background:var(--teal); border-color:var(--teal); color:#04241a; transform:scale(1.08);}
+
+  /* --- floating pill nav dock --- */
+  .navbar{
+    display:flex; justify-content:space-around; align-items:center; gap:4px;
+    margin:0 14px calc(10px + env(safe-area-inset-bottom,0px)); padding:7px;
+    border-radius:20px; background:var(--surface); border:1px solid var(--border);
+    box-shadow:0 10px 24px rgba(0,0,0,.28); flex-shrink:0;
+  }
+  .navitem{display:flex; flex-direction:column; align-items:center; gap:3px; color:var(--text-faint); font-size:9.5px; width:60px; padding:7px 4px 6px; border-radius:14px; transition:background .2s ease, color .2s ease;}
+  .navitem.active{color:var(--teal); background:var(--teal-dim);}
+  .navitem.active .navicon{transform:scale(1.1);}
+  .navicon{width:20px; height:20px; transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+
+  .stat-row{display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px;}
+  .stat-row:last-child{border-bottom:none;}
+  .zonebar{display:flex; height:14px; border-radius:8px; overflow:hidden; margin:10px 0 6px;}
+  .zonebar span{height:100%;}
+  .zonekey{display:flex; gap:12px; flex-wrap:wrap; font-size:10.5px; color:var(--text-dim);}
+  .zonekey .k{display:flex; align-items:center; gap:5px;}
+  .zonekey .sw{width:8px; height:8px; border-radius:2px;}
+
+  .empty{display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; margin:auto; padding:40px 10px; color:var(--text-dim);}
+
+  .toast{
+    position:absolute; bottom:90px; left:20px; right:20px; background:var(--surface-2);
+    border:1px solid var(--border-strong); border-radius:10px; padding:10px 14px; font-size:12.5px;
+    opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:5;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+
+  .weekgoal{display:flex; gap:6px; margin-top:8px;}
+  .weekgoal .d{flex:1; height:6px; border-radius:4px; background:var(--surface-3);}
+  .weekgoal .d.on{background:var(--teal);}
+
+  /* ================= REAL MOBILE DEVICE: fill the whole screen ================= */
+  /* Below ~560px this is treated as an actual phone, not a desktop preview:
+     drop the decorative frame/border/shadow so the app fills edge-to-edge. */
+  @media (max-width:560px){
+    body{padding:0;}
+    .modebar{
+      top:calc(env(safe-area-inset-top,0px) + 8px); transform:translateX(-50%) scale(.92);
+    }
+    .phone{
+      width:100%; height:100vh; height:100dvh; max-width:none; max-height:none;
+      border-radius:0; border:none; box-shadow:none;
+    }
+    .statusbar{display:none;}
+    .screens{padding-top:0;}
+    .screen{padding-top:calc(env(safe-area-inset-top,0px) + 50px);}
+    .navbar{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px);}
+    .board-wrap{padding-top:calc(env(safe-area-inset-top,0px) + 70px);}
+  }
+  /* Once added to the home screen / opened as an installed app, hide the
+     dev-only "frame overview" switch — a real user never needs it. */
+  @media (display-mode: standalone){
+    .modebar{display:none;}
+  }
+
+  /* ================= DESKTOP DASHBOARD LAYOUT ================= */
+  @media (min-width:900px){
+    .app-wrap.active{align-items:stretch; justify-content:stretch;}
+    .phone{
+      max-width:1180px; width:94vw; height:88vh; max-height:800px; margin:auto;
+      border-radius:22px; flex-direction:row;
+    }
+    .statusbar{display:none;}
+    .navbar{
+      order:-1; flex-direction:column; justify-content:flex-start; align-items:center;
+      gap:14px; width:92px; padding:32px 0; margin:0; border-radius:0; box-shadow:none;
+      border-right:1px solid var(--border); border-top:none;
+      flex-shrink:0;
+    }
+    .navitem{width:auto; padding:9px 14px;}
+    .navitem span{display:none;}
+    .navicon{width:22px; height:22px;}
+    .screens{padding:0;}
+    .screen{padding:34px 44px 0; max-width:820px; margin:0 auto;}
+    .gauge-grid, .metric-grid{grid-template-columns:repeat(4,1fr);}
+    .chip-grid{grid-template-columns:repeat(3,1fr);}
+    .btn-row{padding-bottom:34px;}
+    .topbar h2{font-size:22px;}
+  }
+
+  /* ================= FIGMA-STYLE FRAME OVERVIEW ================= */
+  .board-wrap{display:none; width:100%; height:100%; overflow:auto; padding:76px 24px 40px;}
+  .board-wrap.active{display:block;}
+  .board-canvas{
+    min-width:max-content; display:flex; gap:56px; padding:20px;
+    background-image:radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+  .frame-col{display:flex; flex-direction:column; gap:40px;}
+  .frame{position:relative;}
+  .frame-label{font-family:'Space Grotesk',sans-serif; font-size:12.5px; color:var(--text-dim); margin-bottom:10px; display:flex; align-items:center; gap:8px;}
+  .frame-label .fnum{color:var(--text-faint); font-variant-numeric:tabular-nums;}
+  .frame-box{
+    width:280px; height:572px; background:var(--bg); border-radius:22px; border:1px solid var(--border-strong);
+    overflow:hidden; position:relative; box-shadow:0 12px 30px rgba(0,0,0,.4);
+  }
+  .frame-box .screen{position:static; opacity:1; padding:6px 16px 0; transform:scale(.82); transform-origin:top left; width:341px; height:697px; overflow:hidden; pointer-events:none;}
+  .frame-box .fake-status{display:flex; justify-content:space-between; padding:14px 22px 4px; font-size:12px; color:var(--text-dim);}
+  .frame-arrow{position:absolute; top:50%; right:-44px; transform:translateY(-50%); color:var(--text-faint); font-size:20px;}
+  .board-title{color:var(--text); font-family:'Space Grotesk',sans-serif; font-size:20px; margin:0 0 4px; padding:0 24px;}
+  .board-sub{color:var(--text-dim); font-size:13px; margin:0 0 18px; padding:0 24px; max-width:640px;}
+</style>
+</head>
+<body>
+
+<div class="modebar">
+  <button id="modeAppBtn" class="active" onclick="setMode('app')">Live app</button>
+  <button id="modeBoardBtn" onclick="setMode('board')">Frame overview</button>
+</div>
+
+<!-- ===================== LIVE APP ===================== -->
+<div class="app-wrap active" id="appWrap">
+  <div class="phone" id="phone">
+    <div class="statusbar"><span>9:41</span><span>●●● 100%</span></div>
+    <div class="screens" id="screens"></div>
+    <div class="navbar" id="navbar"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<!-- ===================== FIGMA-STYLE FRAME OVERVIEW ===================== -->
+<div class="board-wrap" id="boardWrap">
+  <h1 class="board-title">NeuroPulse Fit — UX flow</h1>
+  <p class="board-sub">Every screen in the product, laid out in the order a person moves through them: onboarding → device check → live training → risk &amp; recovery → summary → history. Switch to "Live app" to interact with it.</p>
+  <div class="board-canvas" id="boardCanvas"></div>
+</div>
+
+<script>
+/* =========================================================================
+   DATA MODEL
+========================================================================= */
+const ACTIVITIES = [
+  {id:'bodybuilding', name:'Bodybuilding', hint:'Strength / hypertrophy', emoji:'🏋️'},
+  {id:'running',      name:'Running',      hint:'Steady-state / intervals', emoji:'🏃'},
+  {id:'swimming',     name:'Swimming',     hint:'Pool endurance & technique', emoji:'🏊'},
+  {id:'yoga',         name:'Yoga',         hint:'Mobility / breathwork', emoji:'🧘'},
+  {id:'hiit',         name:'HIIT',         hint:'High-intensity intervals', emoji:'⚡'},
+  {id:'hybrid',       name:'Hybrid training', hint:'Strength + cardio stations', emoji:'🔀'},
+  {id:'general',      name:'General training', hint:'Mixed / gym session', emoji:'💪'},
+];
+const BTN_ICONS = {
+  play:'<svg class="bicon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  stop:'<svg class="bicon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  pause:'<svg class="bicon" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  refresh:'<svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6"/><path d="M20 20v-6h-6"/><path d="M5 14a8 8 0 0 0 14.5 3.5M19 10A8 8 0 0 0 4.5 6.5"/></svg>',
+  arrow:'<svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  check:'<svg class="bicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>',
+};
+
+/* Other physiological signals worth understanding during and after training.
+   These aren't independently sensor-tracked in this app (that would need lab
+   or specialized hardware) — they're here so the numbers above have context. */
+const BODY_SIGNALS = [
+  {emoji:'⚡', name:'Adrenaline (epinephrine)', role:'The fast "fight-or-flight" hormone — it spikes in seconds at the start of hard effort, giving you the initial burst of energy and alertness.', tip:'Fades quickly once effort drops, unlike cortisol — a normal, useful part of warming up.'},
+  {emoji:'🔥', name:'Lactate (the "burn")', role:'Builds up in working muscles during hard anaerobic effort — the burning feeling in the last reps of a set or the last strides of a sprint.', tip:'Clears from the muscles within about an hour of easy movement — a short walk or light spin helps it along.'},
+  {emoji:'😊', name:'Endorphins & dopamine', role:'Released during and after exercise — the source of the post-workout mood lift ("runner\'s high") and part of why consistent training improves mood over time.', tip:'Tends to peak 20–30 minutes after a session ends — a good reason not to rush straight from workout to screens.'},
+  {emoji:'💧', name:'Hydration & core temperature', role:'Sweat is the body\'s cooling system — heavy sweating means real fluid and electrolyte loss, not just discomfort.', tip:'Weigh yourself before and after a long, hot session once — the weight lost is mostly water to replace.'},
+  {emoji:'🧬', name:'Testosterone & growth hormone', role:'Rise after strength and high-intensity training and support muscle repair over the following 24–48 hours — this is the biological reason rest days between hard sessions matter.', tip:'Deep sleep is when most of this repair work actually happens — this is the real link between sleep and gains.'},
+];
+
+const RECOVERY_LIBRARY = {
+  breathing:{title:'Box breathing reset', detail:'Inhale 4s · hold 4s · exhale 4s · hold 4s, repeat for 90 seconds.'},
+  hydrate:{title:'Hydrate', detail:'Sip 200–300ml of water before continuing.'},
+  dropload:{title:'Drop intensity one level', detail:'Reduce pace, weight, or tempo for the next block.'},
+  extendrest:{title:'Extend rest between sets', detail:'Add 30–45s of rest before the next set or interval.'},
+  formcheck:{title:'Reset your form', detail:'Slow the next rep down and check bar path / posture before continuing.'},
+  stopcooldown:{title:'End the set and cool down', detail:'Stop this block, walk it out, and let heart rate settle below 120bpm.'},
+  stretch:{title:'Move into stillness', detail:'Come out of the pose, sit, and take 5 slow breaths before continuing.'},
+};
+
+/* ---------------- post-workout recovery + nutrition data ---------------- */
+const POST_WORKOUT_LIBRARY = {
+  bodybuilding:[
+    {id:'pw-protein', title:'Eat protein within ~45–60 min', detail:'Muscle protein synthesis is highest in the window right after lifting — this is when food does the most rebuilding work.'},
+    {id:'pw-stretch', title:'Static stretch what you trained', detail:'Hold each stretch 20–30s on the muscles you just worked, to ease tightness before it sets in.'},
+    {id:'pw-foamroll', title:'Foam roll 5 minutes', detail:'Light self-massage on worked muscles can reduce next-day stiffness.'},
+    {id:'pw-sleep', title:'Prioritize sleep tonight', detail:'Most muscle repair and growth hormone release happens during deep sleep, not in the gym.'},
+  ],
+  running:[
+    {id:'pw-rehydrate', title:'Rehydrate with electrolytes', detail:'Replace sodium and fluid lost through sweat, especially after longer or hotter runs.'},
+    {id:'pw-stretch', title:'Stretch calves, quads & hip flexors', detail:'Running tightens the posterior chain — a short stretch routine helps it release before it locks up.'},
+    {id:'pw-elevate', title:'Elevate your legs 5–10 min', detail:'Helps venous blood pooled in the legs return to circulation faster.'},
+    {id:'pw-sleep', title:'Sleep a little longer tonight', detail:'Endurance sessions raise next-day sleep need more than people expect.'},
+  ],
+  swimming:[
+    {id:'pw-rinse', title:'Shower and rinse off chlorine promptly', detail:'Chlorine left on skin and hair can dry both out — a rinse right after limits that.'},
+    {id:'pw-ears', title:'Dry your ears properly', detail:'Trapped water is the main cause of swimmer\'s ear — tilt your head and dry the outer ear after every session.'},
+    {id:'pw-shoulder-care', title:'Stretch shoulders and lats', detail:'Repetitive overhead strokes tighten the shoulders — a short stretch routine helps prevent the impingement swimmers are prone to.'},
+    {id:'pw-refuel', title:'Refuel carbs + protein', detail:'Swimming often burns more than it feels like, since water carries away the usual heat and sweat cues of a hard effort.'},
+  ],
+  yoga:[
+    {id:'pw-warmdrink', title:'Have a warm, caffeine-free drink', detail:'Supports the calming, parasympathetic state you just built in practice.'},
+    {id:'pw-light-meal', title:'Eat a light, easy-to-digest meal', detail:'A heavy meal right after can undo some of the calm you just created.'},
+    {id:'pw-screens', title:'Ease off screens for a bit', detail:'Extends the nervous-system down-regulation the practice started.'},
+  ],
+  hiit:[
+    {id:'pw-refuel', title:'Refuel carbs + protein (roughly 3:1)', detail:'HIIT burns through stored glycogen fast — carbs replace that store, protein supports repair.'},
+    {id:'pw-electrolytes', title:'Replace electrolytes', detail:'High-sweat interval sessions lose more sodium and potassium than steady cardio.'},
+    {id:'pw-extended-cooldown', title:'Extend your cooldown', detail:'Bring heart rate down gradually rather than stopping abruptly — reduces post-exercise dizziness.'},
+    {id:'pw-sleep', title:'Extra sleep or a short nap', detail:'HIIT creates the highest combined brain+heart load of these activities — recovery sleep need is highest here too.'},
+  ],
+  hybrid:[
+    {id:'pw-refuel', title:'Refuel carbs + protein soon after', detail:'Mixed strength-and-cardio stations deplete glycogen like endurance work and stress muscle like strength work — you need both macros back.'},
+    {id:'pw-jointcare', title:'Check joints that took the most load', detail:'Compound stations (sleds, carries, wall balls) load joints under fatigue — a few minutes of mobility work on the knees/shoulders/lower back is worth it.'},
+    {id:'pw-electrolytes', title:'Replace electrolytes', detail:'Long mixed sessions often produce the highest total sweat loss of any category here.'},
+    {id:'pw-sleep', title:'Treat it like your hardest session of the week', detail:'Hybrid sessions combine brain and heart demand from two different training styles — plan recovery sleep accordingly.'},
+  ],
+  general:[
+    {id:'pw-balanced-meal', title:'Eat a balanced meal within 2 hours', detail:'A mix of protein and carbs supports general recovery after a mixed session.'},
+    {id:'pw-hydrate', title:'Hydrate', detail:'Replace fluids lost during the session, more if you sweated heavily.'},
+    {id:'pw-stretch', title:'Gentle full-body stretch', detail:'A few minutes of stretching helps prevent next-day stiffness.'},
+  ],
+};
+
+const MET_BY_ACTIVITY = {bodybuilding:6, running:9.5, swimming:8.0, yoga:2.8, hiit:8.5, hybrid:8.0, general:5.5};
+const CARB_G_PER_KG = {bodybuilding:0.5, running:1.0, swimming:0.9, yoga:0.25, hiit:0.8, hybrid:0.9, general:0.5};
+const PROTEIN_G_PER_KG = {bodybuilding:0.35, running:0.25, swimming:0.3, yoga:0.15, hiit:0.35, hybrid:0.35, general:0.28};
+const ACTIVITY_MULT = {sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryactive:1.9};
+const SORENESS_GROUPS = ['Chest','Back','Shoulders','Arms','Legs','Core'];
+const SORENESS_LEVELS = [
+  {id:'none', label:'Fresh'},
+  {id:'mild', label:'Mild'},
+  {id:'sore', label:'Sore'},
+];
+const FOOD_LIBRARY = {
+  protein:['Eggs','Greek yogurt or curd','Paneer or tofu','Chicken breast','Fish','Lentils (dal) or beans','Milk','Cottage cheese'],
+  carbs:['Banana','Rice','Oats','Sweet potato','Whole-grain bread or roti','Apple or orange','Dates'],
+  hydration:['Water','Coconut water','Electrolyte drink (or water + a pinch of salt + lemon)'],
+  fats:['Nuts (almonds, peanuts)','Seeds (chia, flax)','Avocado','A small amount of olive oil or ghee'],
+};
+
+/* ---------------- real-world dishes, by cuisine, with portion guidance ----------------
+   Values are per 100g approximations for everyday home/restaurant versions —
+   good enough to guide a portion, not a lab-grade nutrition label. */
+const FOOD_CUISINES = [
+  {id:'southIndian', name:'South Indian', emoji:'🥥'},
+  {id:'northIndian', name:'North Indian', emoji:'🫓'},
+  {id:'global',      name:'Global / restaurant', emoji:'🍝'},
+  {id:'treats',      name:'Treats & fast food', emoji:'🍟'},
+  {id:'budget',      name:'Budget staples', emoji:'💰'},
+];
+const FOOD_DISHES = {
+  southIndian:[
+    {id:'idli', name:'Idli', per100:{kcal:132, protein:4.0, carb:27, fat:0.3}, serving:{grams:150, desc:'2 idlis with chutney'}, note:'One of the lightest, easiest-to-digest options on this list — good on high-soreness or low-appetite days.', costTier:'budget', swaps:[]},
+    {id:'dosa', name:'Plain dosa', per100:{kcal:168, protein:3.9, carb:28, fat:3.7}, serving:{grams:120, desc:'1 medium dosa'}, note:'Pair with sambar for extra protein rather than extra ghee for extra flavor.', costTier:'budget', swaps:[]},
+    {id:'sambar', name:'Sambar', per100:{kcal:65, protein:3.0, carb:9, fat:1.8}, serving:{grams:150, desc:'1 bowl'}, note:'Mostly lentils and vegetables — a good low-calorie way to add protein to a rice or idli meal.', costTier:'budget', swaps:[]},
+    {id:'curd-rice', name:'Curd rice', per100:{kcal:120, protein:2.8, carb:20, fat:3.0}, serving:{grams:200, desc:'1 bowl'}, note:'Gentle on the gut — a solid choice the evening after a hard session.', costTier:'budget', swaps:[]},
+    {id:'biryani-south', name:'Chicken biryani', per100:{kcal:190, protein:7.5, carb:24, fat:6.5}, serving:{grams:300, desc:'1 regular plate'}, note:'Absolutely fits — just measure the plate rather than eyeballing it, and go easy on extra fried onions or ghee on top.', costTier:'moderate', swaps:[{name:'Curd rice + boiled egg', reason:'similar carbs and calories, at a fraction of the cost, if biryani isn\'t affordable today'}]},
+    {id:'filter-coffee', name:'Filter coffee', per100:{kcal:60, protein:1.5, carb:8, fat:2}, serving:{grams:100, desc:'1 small cup'}, note:'Fine daily — just watch the added sugar if you\'re having more than one or two cups.', costTier:'budget', swaps:[]},
+  ],
+  northIndian:[
+    {id:'roti', name:'Roti / chapati', per100:{kcal:120, protein:3.6, carb:18, fat:3.0}, serving:{grams:80, desc:'2 rotis'}, note:'A very flexible carb base — easy to scale up or down to fit the rest of your plate.', costTier:'budget', swaps:[]},
+    {id:'dal-makhani', name:'Dal makhani', per100:{kcal:140, protein:6.0, carb:14, fat:6.5}, serving:{grams:200, desc:'1 bowl'}, note:'Good plant protein, but restaurant versions are often richer in cream/butter — home-style is usually lighter.', costTier:'moderate', swaps:[{name:'Plain dal (home-style)', reason:'same lentil protein without the added cream and butter'}]},
+    {id:'paneer-butter-masala', name:'Paneer butter masala', per100:{kcal:250, protein:9.0, carb:10, fat:19}, serving:{grams:200, desc:'1 bowl'}, note:'Delicious, but calorie-dense from the cream and butter — a smaller bowl alongside extra roti or rice balances it out.', costTier:'moderate', swaps:[{name:'Boiled egg or plain curd', reason:'similar protein for much less cost, without the rich gravy calories'}]},
+    {id:'butter-chicken', name:'Butter chicken', per100:{kcal:215, protein:14, carb:6, fat:15}, serving:{grams:200, desc:'1 bowl'}, note:'High-protein and satisfying — a reliable option after a strength or HIIT session.', costTier:'moderate', swaps:[{name:'Home-style chicken curry or boiled egg curry', reason:'same protein, far less cream and butter cost/calories'}]},
+    {id:'chole', name:'Chole (chickpea curry)', per100:{kcal:170, protein:7.0, carb:20, fat:7.0}, serving:{grams:200, desc:'1 bowl'}, note:'Great fiber and plant protein — pairs well with rice or bhature for a full post-workout plate.', costTier:'budget', swaps:[]},
+    {id:'biryani-north', name:'Chicken biryani', per100:{kcal:200, protein:8.0, carb:25, fat:7.0}, serving:{grams:300, desc:'1 regular plate'}, note:'Same idea as any biryani — a measured plate fits a hard-training day just fine, so no need to skip it.', costTier:'moderate', swaps:[{name:'Rice + dal + boiled egg', reason:'a much cheaper way to hit similar carbs and protein'}]},
+  ],
+  global:[
+    {id:'chicken-rice-bowl', name:'Grilled chicken & rice bowl', per100:{kcal:165, protein:25, carb:12, fat:3.0}, serving:{grams:300, desc:'1 bowl'}, note:'One of the most efficient options here for hitting a protein target without excess calories.', costTier:'moderate', swaps:[{name:'Rice + dal or boiled eggs', reason:'a home-cooked, budget version of the same protein-and-carb combo'}]},
+    {id:'pizza', name:'Margherita pizza', per100:{kcal:266, protein:11, carb:33, fat:10}, serving:{grams:120, desc:'2 slices'}, note:'Count slices rather than "a pizza" — two slices plus a side salad is a very different meal from the whole pie.', costTier:'moderate', swaps:[{name:'Roti or bread with cheese and vegetables', reason:'a home-made version covers similar carbs and fat for less'}]},
+    {id:'burger', name:'Burger with bun', per100:{kcal:250, protein:14, carb:26, fat:11}, serving:{grams:220, desc:'1 regular burger'}, note:'Fine occasionally — pair with a side salad instead of fries to leave more room in your calorie budget.', costTier:'moderate', swaps:[{name:'Egg or chicken sandwich at home', reason:'similar protein and carbs without restaurant pricing'}]},
+    {id:'pasta-alfredo', name:'Pasta alfredo', per100:{kcal:194, protein:6.0, carb:20, fat:9.5}, serving:{grams:250, desc:'1 plate'}, note:'A tomato-based sauce instead of cream-based cuts the calorie density a lot if you want the same dish more often.', costTier:'moderate', swaps:[{name:'Rice or roti with a simple dal or egg curry', reason:'similar carbs and calories for much less cost'}]},
+    {id:'sushi', name:'Salmon sushi rolls', per100:{kcal:150, protein:6.0, carb:20, fat:5.0}, serving:{grams:200, desc:'8 pieces'}, note:'Lighter than most restaurant options here — good after a yoga or general session when you want something easy.', costTier:'premium', swaps:[{name:'Boiled egg or curd + rice', reason:'a far cheaper way to get lean protein with carbs if sushi isn\'t accessible'}]},
+    {id:'steak', name:'Grilled steak', per100:{kcal:206, protein:29, carb:0, fat:9.0}, serving:{grams:200, desc:'1 steak'}, note:'Very high protein, essentially no carbs — pair with rice, potatoes, or bread if you need to refill glycogen after a hard session.', costTier:'premium', swaps:[{name:'Chicken breast, eggs, or dal', reason:'similarly high protein for a fraction of the price'}]},
+  ],
+  treats:[
+    {id:'fries', name:'French fries', per100:{kcal:312, protein:3.4, carb:41, fat:15}, serving:{grams:115, desc:'1 regular portion'}, note:'Easy to underestimate — a "regular" portion is already a meaningful chunk of a day\'s calories.', costTier:'budget', swaps:[]},
+    {id:'ice-cream', name:'Ice cream', per100:{kcal:207, protein:3.5, carb:24, fat:11}, serving:{grams:100, desc:'1 cup-ish scoop'}, note:'Totally fine in a normal portion — the issue is usually the size of the bowl, not the food itself.', costTier:'budget', swaps:[]},
+    {id:'chocolate', name:'Chocolate bar', per100:{kcal:535, protein:7.6, carb:59, fat:30}, serving:{grams:40, desc:'1 small bar'}, note:'Very calorie-dense for its size — a small bar goes further than it looks.', costTier:'budget', swaps:[]},
+    {id:'cola', name:'Cola / soft drink', per100:{kcal:42, protein:0, carb:10.6, fat:0}, serving:{grams:330, desc:'1 can'}, note:'Pure quick carbs, no protein — fine right after a long endurance session, less useful most other times.', costTier:'budget', swaps:[]},
+    {id:'samosa', name:'Samosa', per100:{kcal:262, protein:4.0, carb:28, fat:15}, serving:{grams:60, desc:'1 piece'}, note:'One or two alongside a protein-rich meal is very different from a plate of them as the whole meal.', costTier:'budget', swaps:[]},
+  ],
+  budget:[
+    {id:'egg', name:'Boiled egg', per100:{kcal:155, protein:13, carb:1.1, fat:11}, serving:{grams:100, desc:'2 large eggs'}, note:'One of the cheapest, most complete proteins available almost anywhere in the world — a reliable base if pricier protein sources aren\'t accessible.', costTier:'budget', swaps:[]},
+    {id:'milk', name:'Milk', per100:{kcal:61, protein:3.2, carb:4.8, fat:3.3}, serving:{grams:250, desc:'1 glass'}, note:'An easy, cheap way to add both protein and carbs to any meal, hot or cold.', costTier:'budget', swaps:[]},
+    {id:'curd-plain', name:'Curd / plain yogurt', per100:{kcal:60, protein:3.5, carb:4.7, fat:3.0}, serving:{grams:200, desc:'1 bowl'}, note:'Gut-friendly and widely affordable — a good everyday protein source alongside any staple carb.', costTier:'budget', swaps:[]},
+    {id:'peanuts', name:'Peanuts (roasted, unsalted)', per100:{kcal:567, protein:26, carb:16, fat:49}, serving:{grams:30, desc:'1 small handful'}, note:'One of the cheapest calorie-and-protein-dense foods anywhere — a small handful goes a long way, so watch the portion.', costTier:'budget', swaps:[]},
+    {id:'banana-basic', name:'Banana', per100:{kcal:89, protein:1.1, carb:23, fat:0.3}, serving:{grams:120, desc:'1 medium banana'}, note:'Cheap, portable, and a solid quick-carb option before or after training almost anywhere in the world.', costTier:'budget', swaps:[]},
+    {id:'rice-plain', name:'Rice (cooked, plain)', per100:{kcal:130, protein:2.7, carb:28, fat:0.3}, serving:{grams:200, desc:'1 bowl'}, note:'A globally affordable carb base — pair with any cheap protein (egg, dal, curd) for a complete, budget post-workout plate.', costTier:'budget', swaps:[]},
+    {id:'potato-boiled', name:'Potato (boiled)', per100:{kcal:87, protein:1.9, carb:20, fat:0.1}, serving:{grams:200, desc:'2 medium potatoes'}, note:'A very cheap, filling carb source with more potassium than most people expect — useful after a heavy-sweat session.', costTier:'budget', swaps:[]},
+    {id:'oats-plain', name:'Oats (cooked, plain)', per100:{kcal:71, protein:2.5, carb:12, fat:1.5}, serving:{grams:200, desc:'1 bowl'}, note:'Inexpensive, filling, and slow-digesting — a good pre-workout option if trying to avoid a sugar spike.', costTier:'budget', swaps:[]},
+    {id:'dal-plain', name:'Lentils / dal (plain, home-style)', per100:{kcal:116, protein:9.0, carb:20, fat:0.4}, serving:{grams:200, desc:'1 bowl'}, note:'Extremely affordable plant protein — arguably the best cost-to-protein ratio on this whole list.', costTier:'budget', swaps:[]},
+    {id:'bread-wholegrain', name:'Bread (whole-grain)', per100:{kcal:247, protein:13, carb:41, fat:4.2}, serving:{grams:60, desc:'2 slices'}, note:'A convenient, widely available carb-and-protein base — pair with egg, peanut butter, or curd for a complete meal.', costTier:'budget', swaps:[]},
+  ],
+};
+
+/* Flattened, searchable version of every dish across every cuisine — used by the food scanner. */
+const FOOD_DATABASE = [];
+FOOD_CUISINES.forEach(c=>{
+  FOOD_DISHES[c.id].forEach(dish=>{
+    FOOD_DATABASE.push(Object.assign({cuisineId:c.id, cuisineName:c.name, cuisineEmoji:c.emoji}, dish));
+  });
+});
+function searchFoodDatabase(query){
+  const q = (query||'').trim().toLowerCase();
+  if(!q) return FOOD_DATABASE;
+  return FOOD_DATABASE.filter(f=>f.name.toLowerCase().includes(q) || f.cuisineName.toLowerCase().includes(q));
+}
+
+function mealTargets(activity){
+  return {
+    proteinG: Math.round(state.bodyProfile.weight * PROTEIN_G_PER_KG[activity]),
+    carbG: Math.round(state.bodyProfile.weight * CARB_G_PER_KG[activity]),
+  };
+}
+function computeDishPortion(dish, targets, tdee){
+  let grams;
+  if(dish.per100.carb > 2){
+    grams = (targets.carbG / dish.per100.carb) * 100;
+  } else {
+    grams = (targets.proteinG / (dish.per100.protein || 1)) * 100;
+  }
+  const calorieCeilingGrams = ((tdee*0.35) / dish.per100.kcal) * 100;
+  grams = Math.min(grams, calorieCeilingGrams);
+  grams = Math.max(60, Math.min(500, Math.round(grams/10)*10));
+  const scale = grams / dish.serving.grams;
+  return {
+    grams, scale,
+    kcal: Math.round(dish.per100.kcal*grams/100),
+    protein: Math.round(dish.per100.protein*grams/100),
+    carb: Math.round(dish.per100.carb*grams/100),
+    fat: Math.round(dish.per100.fat*grams/100),
+  };
+}
+function fitLabel(scale){
+  if(scale<0.6) return {text:'Smaller portion', cls:'amber'};
+  if(scale<=1.3) return {text:'Good fit', cls:'teal'};
+  return {text:'Generous — fine occasionally', cls:'blue'};
+}
+
+function computeBMR(p){ const sexOffset = p.sex==='male' ? 5 : -161; return 10*p.weight + 6.25*p.height - 5*p.age + sexOffset; }
+function computeTDEE(p){ return Math.round(computeBMR(p) * (ACTIVITY_MULT[p.activityLevel]||1.55)); }
+function computeCalorieBurn(activity, minutes, avgHeart){
+  const met = (MET_BY_ACTIVITY[activity]||5) * (0.8 + (avgHeart/100)*0.4);
+  return Math.round(met * 3.5 * state.bodyProfile.weight / 200 * minutes);
+}
+function sorenessCount(level){ return Object.values(state.soreness).filter(v=>v===level).length; }
+function computeRecoveryScore(lastSession){
+  let score = 100;
+  if(lastSession){
+    score -= lastSession.avgHeart*0.25;
+    score -= lastSession.avgBrain*0.15;
+    score -= (lastSession.avgCortisol||0)*0.2;
+  }
+  score -= sorenessCount('sore')*7;
+  score -= sorenessCount('mild')*3;
+  if(state.sleepHours>=8) score += 8;
+  else if(state.sleepHours<6) score -= 15;
+  return Math.max(5, Math.min(100, Math.round(score)));
+}
+function recoveryTier(score){
+  if(score>=75) return {label:'Ready', cls:'teal', note:'Signals point to a well-recovered body and mind — a harder session is reasonable today.'};
+  if(score>=45) return {label:'Caution', cls:'amber', note:'Partial recovery — a light-to-moderate session is fine, but hold off on a personal best.'};
+  return {label:'Recover', cls:'heart', note:'Signals point to real fatigue — prioritize rest, sleep, and food over training today.'};
+}
+function recommendedSleep(lastSession){
+  let base = 7.5;
+  if(lastSession){
+    if(lastSession.activity==='hiit' || lastSession.activity==='bodybuilding') base += 0.75;
+    if(lastSession.avgHeart>70) base += 0.5;
+    if((lastSession.avgCortisol||0)>=70) base += 0.5;
+    if(lastSession.risk) base += 0.5;
+  }
+  return {low: Math.round((base-0.5)*10)/10, high: Math.round((base+0.5)*10)/10};
+}
+
+const STAGE_META = {
+  warmup:{label:'Warm-up',            cls:'warmup',  sub:'Building into the session — nothing to act on yet.'},
+  optimal:{label:'Optimal / Flow',    cls:'optimal', sub:'Brain and heart signals are within your normal working range.'},
+  effort:{label:'High effort',        cls:'effort',  sub:'Working hard — worth watching, not yet a concern.'},
+  risk:{label:'Overreaching — risk',  cls:'risk',    sub:'Signals suggest strain building faster than your baseline recovers from.'},
+};
+
+/* per-activity scripted demo timeline: [minute, brain(0-100 load), heart(0-100 strain), cortisol(0-100 stress hormone)]
+   Cortisol is modeled to lag behind brain/heart and decay more slowly — matching real physiology,
+   where cortisol keeps rising into a hard effort and stays elevated well after heart rate drops.
+   Yoga is the exception: steady breathing lowers cortisol progressively through the practice. */
+const TIMELINES = {
+  bodybuilding: [[0,22,18,12],[2,34,30,18],[4,46,42,26],[6,58,55,36],[8,71,64,48],[10,83,74,60],[12,88,80,70],[14,74,60,74],[16,55,44,72]],
+  running:      [[0,20,24,15],[2,32,38,22],[4,44,52,32],[6,55,63,44],[8,66,74,58],[10,78,86,72],[12,86,92,85],[14,70,68,84],[16,52,50,78]],
+  swimming:     [[0,18,20,12],[2,28,32,18],[4,38,44,26],[6,48,54,36],[8,58,64,48],[10,66,72,58],[12,60,66,62],[14,48,54,60],[16,36,42,55]],
+  yoga:         [[0,40,14,42],[2,32,16,34],[4,26,15,26],[6,22,14,20],[8,30,20,16],[10,58,34,14],[12,70,40,12],[14,42,22,10],[16,26,16,8]],
+  hiit:         [[0,26,20,18],[2,44,40,28],[4,62,58,42],[6,78,74,58],[8,90,88,74],[10,94,95,88],[12,80,72,92],[14,60,52,90],[16,40,34,85]],
+  hybrid:       [[0,24,22,16],[2,42,40,26],[4,56,52,38],[6,70,66,50],[8,60,58,52],[10,80,76,64],[12,92,90,78],[14,84,82,88],[16,62,54,86],[18,44,38,80]],
+  general:      [[0,24,20,14],[2,38,34,20],[4,50,46,28],[6,60,56,36],[8,68,64,44],[10,60,54,42],[12,52,46,38],[14,40,36,32],[16,30,26,26]],
+};
+
+const RISK_PROFILE = {
+  bodybuilding:{trigger:'brain', why:'Cognitive load is climbing faster than load usually does at this stage of a strength session — often a sign of fatiguing form control before the muscle itself is done.', recs:['formcheck','extendrest','hydrate']},
+  running:     {trigger:'heart', why:'Cardiac strain has crossed your personal threshold for sustained pace — heart rate is rising without pace increasing, a classic cardiac-drift warning.', recs:['dropload','hydrate','breathing']},
+  swimming:    {trigger:'heart', why:'Heart strain is climbing relative to stroke rate — often a sign the breathing rhythm has slipped out of sync with the stroke, creating mild oxygen debt.', recs:['dropload','breathing','extendrest']},
+  yoga:        {trigger:'heart', why:'Heart strain is unusually high for a low-exertion pose — often linked to breath-holding or overreaching a stretch rather than physical effort.', recs:['stretch','breathing']},
+  hiit:        {trigger:'both', why:'Both brain load and cardiac strain are elevated together — the combination most associated with overreaching in interval training.', recs:['stopcooldown','breathing','hydrate']},
+  hybrid:      {trigger:'both', why:'Switching between strength stations and cardio stations back-to-back compounds fatigue from both systems at once — the classic hybrid-training overreaching pattern.', recs:['dropload','extendrest','breathing','hydrate']},
+  general:     {trigger:'heart', why:'Heart strain is trending above your baseline for this kind of session.', recs:['dropload','extendrest','hydrate']},
+};
+
+/* ---- exercise / position library, per category ----
+   Each entry explains the brain+heart mechanism behind why it "works" (the
+   pump / the flow / the burn), what it looks like when it's NOT working,
+   why that happens, and how to fix it. */
+const EXERCISE_LIBRARY = {
+  bodybuilding:[
+    {id:'incline-curl', name:'Incline dumbbell curl', tag:'Biceps — long head',
+     brainRole:'Mind-muscle focus on the stretch position recruits more motor units in the long head, which sits on the outside of the arm.',
+     heartRole:'Short sets and short rest keep local blood flow trapped in the muscle — that trapped blood (not heart rate) is most of what you feel as "the pump".',
+     problem:{title:'Feels like a stretch but no pump', why:'Usually the elbow drifts forward, taking tension off the long head, or rest between sets is too long and the blood pools out before the next set.'},
+     solution:['Keep the elbow pinned slightly behind the torso through the whole rep','Cap rest at 45–60s for pump-focused sets','Slow the eccentric to 2–3s to hold tension at the stretch']},
+    {id:'concentration-curl', name:'Concentration curl', tag:'Biceps — short head (peak)',
+     brainRole:'Isolating the arm and watching it strengthens the mind-muscle connection, which increases short-head recruitment more than any other curl variation.',
+     heartRole:'Heart rate rises only moderately here — the burn is metabolic (local), not cardiovascular, so a high heart rate is not the goal for this move.',
+     problem:{title:'Peak not showing up', why:'Momentum from the shoulder or torso is doing part of the lift, so the short head never reaches full contraction.'},
+     solution:['Brace your elbow against your inner thigh so only the forearm moves','Squeeze and hold 1s at the top before lowering','Drop the weight 10–15% and rebuild strict form first']},
+    {id:'incline-bench', name:'Incline barbell press', tag:'Chest — upper',
+     brainRole:'Cueing "push through the upper chest" before the set shifts motor-unit recruitment upward and improves bar path consistency.',
+     heartRole:'Heavy compound pressing spikes heart rate fast — strain here is normal and expected, unlike an isolation curl.',
+     problem:{title:'Shoulders doing the work, chest feels flat', why:'Bench angle is too steep (above ~30°) or the shoulder blades aren\'t retracted, so delts take over the movement.'},
+     solution:['Drop the bench to 15–30°','Pin your shoulder blades back and down before unracking','Lower the bar to the upper chest, not the collarbone']},
+    {id:'weighted-dips', name:'Weighted dips', tag:'Chest — lower / triceps',
+     brainRole:'Leaning the torso forward shifts brain-driven recruitment toward the lower chest fibers instead of the triceps.',
+     heartRole:'A compound push under load with added weight drives heart strain up quickly — this is one of the higher cardiac-load bodybuilding moves.',
+     problem:{title:'Shoulders feel the strain, not the chest', why:'Staying too upright turns the dip into a triceps-dominant, shoulder-loading movement.'},
+     solution:['Lean forward ~30° and let the elbows flare slightly','Stop at the point where shoulders are level with elbows','Reduce added weight until the lean can be held with control']},
+    {id:'wide-pullup', name:'Wide-grip pull-up', tag:'Back — width (lats)',
+     brainRole:'Thinking "elbows to hips" instead of "hands to bar" redirects brain-driven effort into the lats rather than the arms.',
+     heartRole:'A demanding bodyweight compound pull — expect heart rate to climb close to your interval-training range by the last few reps.',
+     problem:{title:'Arms give out before the back does', why:'Grip and biceps are doing most of the pulling because the shoulder blades never depress and retract first.'},
+     solution:['Start every rep by pulling the shoulder blades down and back','Use a slightly wider-than-shoulder grip, not maximal width','Add a 1s pause at the top to confirm the lats, not the arms, are working']},
+    {id:'barbell-row', name:'Barbell row', tag:'Back — thickness',
+     brainRole:'A flat, braced spine lets the brain recruit the mid-back cleanly; a rounded back reroutes effort into the lower back and grip.',
+     heartRole:'Heart strain builds steadily across a set as the isometric hold on the spine adds to the pulling effort.',
+     problem:{title:'Lower back tightens up instead of the back pumping', why:'The torso is rowing from the hips each rep (using momentum) rather than staying fixed while the arms pull.'},
+     solution:['Brace your core and fix your torso angle before the first rep','Pull to the lower ribs, not the chest','Drop the weight until the torso can stay still for every rep']},
+    {id:'overhead-ext', name:'Overhead triceps extension', tag:'Triceps — long head',
+     brainRole:'Keeping the upper arm pinned by the ear and focusing on the stretch overhead biases the long head, the only triceps head that crosses the shoulder.',
+     heartRole:'Low systemic demand — heart rate barely moves, so if you feel breathless here the load or the rest period is off.',
+     problem:{title:'Elbows flare, no stretch felt', why:'The upper arm drifts forward as the weight drops behind the head, taking the long head out of its full stretch.'},
+     solution:['Keep elbows close to your ears throughout','Lower slowly until you feel a full stretch, not just to comfort','Use a lighter weight if elbows keep flaring outward']},
+    {id:'leg-press', name:'Leg press / squat', tag:'Quads',
+     brainRole:'Driving through the whole foot (not just the toes) improves brain-to-muscle signal to the quads and reduces knee strain.',
+     heartRole:'Big lower-body compound lifts are the most cardiac-demanding bodybuilding movement — expect the largest heart-level spike of any exercise in this list.',
+     problem:{title:'Quads burn out but legs feel weak, not pumped', why:'Heart strain is likely maxing out before the muscle reaches failure — the cardiovascular system, not the quads, is the limiter.'},
+     solution:['Extend rest between heavy sets to let heart rate settle first','Check breathing — exhale on the push instead of holding your breath','Cycle in lighter, higher-rep weeks to build cardiac tolerance for leg day']},
+    {id:'bulgarian-split-squat', name:'Bulgarian split squat', tag:'Quads / glutes — unilateral',
+     brainRole:'Single-leg balance under load demands continuous brain-driven stabilization on top of the strength effort itself.',
+     heartRole:'Heart strain builds faster than the two-legged version, since the working leg has no help and fatigues quicker.',
+     problem:{title:'Front knee wobbles or drifts inward', why:'Hip stabilizers are fatiguing before the quad does, and the knee caves in to compensate.'},
+     solution:['Slow the tempo down until the knee tracks in a straight line the whole set','Reduce the rear-foot elevation if balance keeps failing before strength does','Hold a light support in front until stability improves']},
+    {id:'romanian-deadlift', name:'Romanian deadlift (RDL)', tag:'Hamstrings / glutes',
+     brainRole:'A pure hip-hinge with a straight-ish leg is a skill many lifters never fully learn — the brain has to inhibit the natural urge to bend the knees and squat it instead.',
+     heartRole:'Heart strain is moderate and steady rather than spiking — this is a controlled-tempo strength movement, not an explosive one.',
+     problem:{title:'Lower back rounds before the hamstring stretch is felt', why:'The hips aren\'t hinging back far enough, so the lower back flexes to reach the floor instead of the hamstrings lengthening.'},
+     solution:['Push the hips back until you feel the hamstring stretch, then stop the descent there','Keep a soft bend in the knees throughout, not locked or squatting','Lower the weight until the back can stay flat for every rep']},
+    {id:'lateral-raise', name:'Lateral raise', tag:'Shoulders — side delts',
+     brainRole:'A small, isolated range of motion means the mind-muscle connection matters more here than the amount of weight moved.',
+     heartRole:'Very low systemic demand — heart rate should barely rise; this is a pure local, small-muscle isolation move.',
+     problem:{title:'Traps do the lifting, shoulders barely feel it', why:'Weight is heavy enough that the traps shrug to assist, taking the side delts out of the movement.'},
+     solution:['Drop the weight — this move rewards control, not load','Lead with the elbows rather than the hands','Stop just below shoulder height where trap involvement typically creeps in']},
+    {id:'face-pull', name:'Face pull', tag:'Rear delts / upper back health',
+     brainRole:'A corrective, often-skipped movement — brain engagement is about pulling the elbows high and back, not just pulling the rope toward the face.',
+     heartRole:'Minimal heart demand — this is a light-load, high-rep accessory move for shoulder health, not a strength or cardio driver.',
+     problem:{title:'Feels like an arm exercise, not a rear-delt/upper-back one', why:'The elbows are dropping low and pulling like a row instead of flaring high and wide.'},
+     solution:['Pull with elbows high, roughly in line with or above the shoulders','Squeeze the shoulder blades together at the end of each rep','Use a lighter weight — this move rarely needs to be heavy to work']},
+    {id:'hip-thrust', name:'Hip thrust', tag:'Glutes',
+     brainRole:'Many lifters have a weak brain-to-glute connection from years of quad-dominant movement — this exercise is often the one that first teaches it.',
+     heartRole:'Moderate heart strain from the heavy, short-range compound effort, without the systemic demand of a full squat.',
+     problem:{title:'Lower back arches and takes over instead of glutes', why:'Hips are hyperextending too far at the top, shifting load from the glutes to the lumbar spine.'},
+     solution:['Stop the movement when hips are in line with knees and shoulders, not beyond','Tuck the ribs down slightly to avoid over-arching at lockout','Squeeze the glutes hard at the top for a full second before lowering']},
+  ],
+  running:[
+    {id:'easy-run', name:'Easy / base run', tag:'Aerobic base',
+     brainRole:'Low cognitive load lets the brain settle into a steady rhythm — this is the pace where mental fatigue should stay low the whole run.',
+     heartRole:'Heart rate should sit comfortably in zone 2; this is what actually builds aerobic capacity over time, more than fast running does.',
+     problem:{title:'Heart rate creeps up even though pace feels easy', why:'Cardiac drift from heat, dehydration, or under-recovery — the same "easy" pace costs more heart strain than it should.'},
+     solution:['Slow down further until heart rate matches the effort, not the pace','Hydrate before heading out, especially in heat','Check if this run is too soon after a hard session']},
+    {id:'tempo-run', name:'Tempo run', tag:'Threshold',
+     brainRole:'Sustained focus is needed to hold pace right at the edge of comfortable — this is where mental fatigue starts building on purpose.',
+     heartRole:'Heart strain should sit just under your red-line — high effort, but repeatable, which is the point of threshold training.',
+     problem:{title:'Fading hard in the second half', why:'Starting pace is faster than current threshold, so heart strain crosses into the risk zone too early and forces a slowdown.'},
+     solution:['Start 5–10s/km slower than goal pace and negative-split','Break it into shorter reps with 60–90s float recovery','Reassess your threshold pace every few weeks rather than guessing']},
+    {id:'interval-run', name:'Interval / VO2max reps', tag:'High intensity',
+     brainRole:'Short, hard reps demand quick brain-driven pacing decisions each interval — mental fatigue rises fast and recovers fast between reps.',
+     heartRole:'Heart strain should peak near your max during the work interval, then drop noticeably in recovery — that swing is the training effect.',
+     problem:{title:'Heart rate stays high through the "recovery" jog', why:'Recovery intervals are too short or too fast, so the cardiovascular system never gets the down-swing it needs.'},
+     solution:['Walk or jog very lightly during recovery, don\'t just slow slightly','Extend recovery time until heart rate visibly drops before the next rep','Cut the total number of reps rather than shortening recovery']},
+    {id:'long-run', name:'Long run', tag:'Endurance',
+     brainRole:'Mental fatigue typically builds gradually and is the main limiter late in a long run, often before the legs fully give out.',
+     heartRole:'Heart strain should rise only slightly across the run (mild drift); a sharp late rise signals fuel or hydration running out.',
+     problem:{title:'Heart rate spikes in the final third', why:'Glycogen or fluid stores are depleted, so the heart works harder to deliver the same pace.'},
+     solution:['Fuel with carbs every 40–45 minutes on runs over 75 minutes','Hydrate on a schedule, not just when thirsty','Slow the pace proactively in the final third instead of holding on']},
+    {id:'hill-sprints', name:'Hill sprints', tag:'Power / neuromuscular',
+     brainRole:'Maximal effort sprints need full brain-driven motor-unit recruitment — this is a nervous-system-intensive session, not just a cardio one.',
+     heartRole:'Heart strain rises and falls sharply rep to rep; full recovery (walk back down) between reps is what keeps quality high.',
+     problem:{title:'Later reps feel slow despite full effort', why:'Nervous-system (brain) fatigue is limiting force output before the heart or legs are the bottleneck.'},
+     solution:['Cap sessions at 6–8 quality reps rather than chasing more','Take full recovery (60–90s) between reps','End the session once reps noticeably slow down, don\'t push through']},
+    {id:'recovery-run', name:'Recovery run', tag:'Active recovery',
+     brainRole:'Deliberately low focus and effort here helps the nervous system down-regulate after a hard session.',
+     heartRole:'Heart strain should be the lowest of your week\'s runs — if it isn\'t, the body hasn\'t actually recovered from the last session yet.',
+     problem:{title:'Feels harder than it should for an "easy" day', why:'Residual strain from a previous hard session hasn\'t cleared, so today\'s baseline is already elevated.'},
+     solution:['Shorten the run or replace it with walking','Prioritize sleep and hydration before the next hard session','Push the next hard session back a day if strain is still high']},
+    {id:'fartlek', name:'Fartlek run', tag:'Unstructured speed play',
+     brainRole:'Constant on-the-fly pacing decisions (sprint to that tree, ease to that corner) keep the brain more actively engaged than a fixed-pace run.',
+     heartRole:'Heart strain swings up and down freely rather than following a fixed structure — a naturally varied cardiac workout.',
+     problem:{title:'Hard efforts blur together with no real recovery', why:'The "easy" portions between surges aren\'t actually easy, so heart strain never gets the down-swing that makes fartlek effective.'},
+     solution:['Make the easy segments deliberately easy — jog, don\'t cruise at moderate pace','Use landmarks or time, not feel alone, to mark the surges','Cut the session short if easy segments stop feeling like real recovery']},
+    {id:'trail-run', name:'Trail run', tag:'Uneven-terrain endurance',
+     brainRole:'Constant terrain-reading and foot-placement decisions make this more brain-demanding per mile than road running.',
+     heartRole:'Heart strain spikes on climbs and technical sections even at a pace that would feel easy on flat road.',
+     problem:{title:'Heart rate feels high for what seems like an easy effort', why:'Terrain, not fitness, is driving the extra strain — climbs and uneven footing cost more than the pace alone suggests.'},
+     solution:['Judge trail effort by heart level and feel, not by your road pace','Hike the steepest climbs rather than forcing a run','Expect a trail "easy day" to cost more than a road easy day, and plan recovery accordingly']},
+    {id:'marathon-pace', name:'Marathon-pace run', tag:'Race-pace practice',
+     brainRole:'Holding a precise, sustainable pace for a long time is a rehearsal for race-day pacing discipline as much as a fitness session.',
+     heartRole:'Heart strain should stay remarkably stable for the whole effort — real marathon fitness shows up as a flat line here, not a rising one.',
+     problem:{title:'Heart rate keeps climbing at a supposedly "steady" pace', why:'The chosen pace is faster than current marathon fitness supports — a classic sign the goal pace needs revising.'},
+     solution:['Back off the pace by 10–15s/km and see if heart strain flattens out','Practice this session more often at an honest, sustainable pace before chasing the goal pace','Reassess goal pace using a recent race or time-trial rather than an aspirational number']},
+    {id:'track-repeats', name:'Track repeats (e.g. 400m/800m)', tag:'Precision speed work',
+     brainRole:'Hitting exact target splits repeatedly demands continuous pacing focus — this is where runners practice pace judgment under fatigue.',
+     heartRole:'Heart strain rises rep to rep and should partially recover in the rest interval — full recovery isn\'t the goal here the way it is in hill sprints.',
+     problem:{title:'Splits fall apart in the back half of the set', why:'Pace was set slightly too aggressive for current fitness, so heart strain accumulates faster than recovery jogs can clear it.'},
+     solution:['Start the set 1–2s/rep slower than goal pace and see if it holds better','Extend the recovery jog slightly rather than shortening the rep','Cut the number of reps rather than let splits drift wildly off target']},
+  ],
+  swimming:[
+    {id:'freestyle', name:'Freestyle (front crawl)', tag:'Technique + endurance',
+     brainRole:'Coordinating breathing rhythm, arm rotation, and kick timing simultaneously is one of the highest technical-coordination demands in this whole app.',
+     heartRole:'Horizontal position and water pressure naturally keep heart rate lower than the equivalent effort on land, so perceived effort is a better guide than raw heart-rate numbers.',
+     problem:{title:'Breathless despite a pace that "should" feel manageable', why:'Breathing rhythm is likely mistimed with the stroke — breathing on a fixed side every stroke, rather than a rhythm that matches effort, causes this.'},
+     solution:['Practice bilateral breathing (both sides) at easy pace to find a natural rhythm','Slow the stroke rate slightly rather than rushing the breath','Do short, technique-focused reps before chasing distance or speed']},
+    {id:'backstroke', name:'Backstroke', tag:'Technique + shoulder mobility',
+     brainRole:'Swimming without seeing where you\'re going relies heavily on brain-driven spatial awareness (counting strokes, feeling the wall) rather than vision.',
+     heartRole:'Similar cardiovascular demand to freestyle, but face-up positioning makes breathing rhythm naturally easier to sustain.',
+     problem:{title:'Veering off-line across the pool', why:'Core and hip stability is fatiguing, letting the body rotate too much side to side instead of tracking straight.'},
+     solution:['Engage the core to reduce excess hip rotation','Count strokes from the flags to judge wall distance instead of looking back','Shorten reps if drifting off-line becomes frequent — it\'s a fatigue signal, not just a technique quirk']},
+    {id:'breaststroke', name:'Breaststroke', tag:'Technique + timing',
+     brainRole:'The glide-pull-kick-breathe sequence has a very specific timing window — brain-driven timing errors here cost far more speed than raw strength ever would.',
+     heartRole:'Heart strain tends to rise in surges tied to the pull-and-breathe phase rather than rising smoothly like freestyle.',
+     problem:{title:'Feels effortful but covers little distance per stroke', why:'The glide phase is being rushed, so each stroke cycle is doing less work than it should.'},
+     solution:['Consciously pause and glide after each pull before starting the next one','Slow the overall tempo — breaststroke rewards timing over turnover speed','Practice the kick and pull separately with a board before combining them again']},
+    {id:'butterfly', name:'Butterfly', tag:'Power + full-body coordination',
+     brainRole:'Widely considered the most technically demanding stroke — the two-beat kick and undulating body timing require near-total brain focus to sustain.',
+     heartRole:'The highest heart-strain stroke per length of any swimming style, due to its full-body power demand.',
+     problem:{title:'Falls apart (loses rhythm) after just a few strokes', why:'This is very normal — butterfly fatigues the coordination pattern before most people\'s muscles or lungs are actually the limiter.'},
+     solution:['Train it in very short reps (10–15m) with full rest, rather than trying to sustain it','Practice the body undulation (dolphin kick) separately from the arm pull first','Mix butterfly arms with a flutter kick occasionally to isolate and rebuild the arm pattern alone']},
+    {id:'pool-sprints', name:'Sprint intervals (pool)', tag:'Anaerobic speed',
+     brainRole:'Short, maximal-effort lengths need a fast, decisive pacing commitment each rep — little time to think, mostly to execute.',
+     heartRole:'Heart strain spikes hard per rep with only partial recovery between — similar in shape to track repeats, but the water keeps the absolute numbers lower.',
+     problem:{title:'Times fall off sharply after just 2–3 reps', why:'Very short, maximal swimming efforts rely on anaerobic capacity that depletes fast — this is expected, not a sign of poor fitness.'},
+     solution:['Extend rest between reps (60–90s) rather than shortening it to "keep up the pace"','Cap the set at the number of reps that hold a consistent time, then stop','Track consistency of times, not just the fastest one, as the real measure of the session']},
+    {id:'endurance-swim', name:'Endurance / distance swim', tag:'Aerobic base',
+     brainRole:'Long, steady swimming can become meditative once technique is automatic — mental fatigue here is more about monotony than coordination load.',
+     heartRole:'Heart strain should stay flat and low for most of the swim, similar to an easy run — a slow drift upward late on signals fading technique efficiency, not just fitness.',
+     problem:{title:'Heart rate creeps up even though pace feels the same', why:'Technique efficiency drops as shoulders fatigue, so more effort is needed to hold the same pace late in the swim.'},
+     solution:['Break long swims into sets with brief rests to keep technique fresh, rather than one unbroken distance','Focus on stroke length (distance per stroke) rather than just stroke rate as fatigue sets in','Shorten the session if heart strain keeps climbing despite unchanged pace']},
+    {id:'kickboard-drill', name:'Kickboard drills', tag:'Leg-isolated technique',
+     brainRole:'Isolating the kick removes the arm-breathing coordination puzzle, which is exactly why it\'s used to rebuild leg technique specifically.',
+     heartRole:'Heart strain is usually lower than full-stroke swimming for the same perceived effort, since the upper body isn\'t contributing propulsion.',
+     problem:{title:'Barely moving despite kicking hard', why:'The kick is likely coming from the knees (bicycle-style) instead of the hips, which wastes most of the effort.'},
+     solution:['Keep the kick narrow and originating from the hips, not the knees','Keep ankles relaxed and pointed rather than flexed','Use fins occasionally to feel what an efficient kick tempo should feel like']},
+  ],
+  yoga:[
+    {id:'downdog', name:'Downward-facing dog', tag:'Foundational stretch',
+     brainRole:'Focusing on long exhales here activates the parasympathetic (calming) nervous system, which is the main brain effect of this pose.',
+     heartRole:'Heart strain should be low to moderate; the head-below-heart position naturally supports a calmer heart rate.',
+     problem:{title:'Heart rate feels elevated, breath feels short', why:'Breath is being held or shortened, often from gripping the shoulders too hard, which blocks the calming effect the pose is meant to give.'},
+     solution:['Bend the knees generously to release the hamstrings and low back','Lengthen the exhale until it\'s longer than the inhale','Rest in child\'s pose if breath can\'t settle within a few breaths']},
+    {id:'warrior2', name:'Warrior II', tag:'Standing strength',
+     brainRole:'Holding a fixed gaze (drishti) while the legs work builds focus under physical load — a mild, controlled brain-load pose.',
+     heartRole:'Heart strain rises modestly from the isometric leg hold — normal, and it should plateau rather than keep climbing.',
+     problem:{title:'Legs shake and heart rate keeps climbing', why:'The front knee has likely drifted past the ankle, or the hold is longer than current leg strength supports.'},
+     solution:['Stack the front knee directly over the ankle','Shorten the hold time and rebuild duration gradually','Sink less deep until the pose can be held without shaking']},
+    {id:'tree-pose', name:'Tree pose', tag:'Balance',
+     brainRole:'Balance poses demand continuous small brain corrections — this is a cognitive-load pose more than a strength one.',
+     heartRole:'Heart rate should barely move; a spike usually reflects frustration or bracing, not physical effort.',
+     problem:{title:'Can\'t hold it, keeps toppling', why:'Fixing the gaze on a moving point (or a phone/mirror) removes the visual anchor the brain needs for balance.'},
+     solution:['Pick one still point at eye level and hold your gaze there','Press the lifted foot and standing leg into each other actively','Practice near a wall until balance improves']},
+    {id:'pigeon', name:'Pigeon pose', tag:'Hip opener',
+     brainRole:'Deep stretches trigger a protective brain response (guarding) if the nervous system doesn\'t trust the position yet — that guarding is felt as tightness.',
+     heartRole:'Heart strain should stay low; if it rises, it usually means the breath has stopped, not that the hip is working harder.',
+     problem:{title:'Hip won\'t release, feels tight every time', why:'The nervous system is bracing against the stretch because it\'s being forced rather than eased into.'},
+     solution:['Prop the hip with a cushion so the position feels supported, not forced','Breathe into the stretch for 5+ slow breaths before expecting release','Back off the depth by 20–30% and hold longer instead of going deeper']},
+    {id:'sun-salutation', name:'Sun salutation flow', tag:'Dynamic warm-up',
+     brainRole:'Linking breath to movement (one breath per movement) is what shifts this from exercise into a brain-calming, meditative flow.',
+     heartRole:'Heart rate should rise gently through the flow as a natural warm-up, without ever feeling like cardio.',
+     problem:{title:'Feels rushed, heart rate spikes like cardio', why:'Movement is outrunning the breath, turning a calming flow into an accidental cardio set.'},
+     solution:['Slow the pace until each movement matches one full breath','Add an extra breath at forward fold and downward dog','Reduce the number of rounds before adding speed back']},
+    {id:'savasana', name:'Savasana (final relaxation)', tag:'Recovery / integration',
+     brainRole:'This pose is where the brain consolidates the parasympathetic shift built during the practice — skipping it undoes some of the calming effect.',
+     heartRole:'Heart rate should reach its lowest point of the whole session here.',
+     problem:{title:'Mind stays busy, can\'t settle', why:'Ending the practice on a stimulating pose or rushing straight into it doesn\'t give the nervous system time to downshift.'},
+     solution:['Add 1–2 minutes of slow breathing before lying down','Keep the room quiet and dim if possible','Stay at least 5 minutes — cutting it short removes most of the benefit']},
+    {id:'cat-cow', name:'Cat-Cow flow', tag:'Spinal mobility',
+     brainRole:'Syncing breath to spinal movement (inhale to arch, exhale to round) is a simple but effective brain-calming pattern often used to start a practice.',
+     heartRole:'Minimal heart demand — this is a warm-up and mobility move, not a conditioning one.',
+     problem:{title:'Feels stiff and mechanical rather than flowing', why:'Movement is happening without the breath, so the spine moves but the calming nervous-system effect doesn\'t show up.'},
+     solution:['Slow down until each phase matches one full inhale or exhale','Move from the whole spine, not just the neck or lower back','Do a few extra rounds before judging whether it "worked" — the effect builds over reps']},
+    {id:'bridge-pose', name:'Bridge pose', tag:'Backbend / glute activation',
+     brainRole:'A gentle backbend that also asks the brain to actively fire the glutes rather than let the lower back do all the lifting.',
+     heartRole:'Heart strain stays low; a mild rise usually comes from breath-holding during the lift, not the effort itself.',
+     problem:{title:'Lower back feels it more than the glutes', why:'Glute activation is weak or fatigued, so the lift is coming from arching the lower back instead.'},
+     solution:['Squeeze the glutes deliberately before and during the lift','Press evenly through both feet rather than pushing through the toes','Lower the hip height slightly if the lower back is doing most of the work']},
+    {id:'seated-forward-fold', name:'Seated forward fold', tag:'Hamstring / nervous system release',
+     brainRole:'Forward folds are classically calming — folding the body inward tends to shift the nervous system toward rest.',
+     heartRole:'Heart rate should be among the lowest of any pose in a session, similar to Savasana.',
+     problem:{title:'Feels agitating rather than calming', why:'Straining to reach the toes engages the nervous system\'s effort response, working against the pose\'s intent.'},
+     solution:['Bend the knees generously — reaching a "deep" fold matters far less than relaxing into it','Let the head and neck hang heavy rather than holding tension there','Stay for 5+ breaths without adjusting deeper — depth isn\'t the goal here']},
+    {id:'vinyasa-flow', name:'Vinyasa flow', tag:'Dynamic, breath-linked sequence',
+     brainRole:'Continuously linking new poses to breath keeps brain engagement moderate-to-high throughout — more mentally active than a static hold-based practice.',
+     heartRole:'Heart rate rises and falls through the sequence, staying moderate overall — a middle ground between yoga\'s usual calm and true cardio.',
+     problem:{title:'Session starts feeling like a workout, not a flow', why:'Pace has outrun the breath across multiple poses in a row, turning the practice cardiovascular rather than meditative.'},
+     solution:['Return to matching one breath per movement, even if it means moving slower than the class or video','Skip a jump-back or jump-through and step instead if breath is being lost there','Insert a brief child\'s pose to reset breath before continuing the sequence']},
+    {id:'yin-hold', name:'Yin yoga long hold', tag:'Deep connective-tissue release (3–5 min holds)',
+     brainRole:'Long passive holds test the brain\'s ability to stay with discomfort without tensing against it — the mental skill is arguably the main point of yin.',
+     heartRole:'Heart rate should be very low and stable — yin is a passive, still practice with minimal muscular effort.',
+     problem:{title:'Restlessness or clock-watching before the hold ends', why:'The nervous system is still in an active, effort-oriented mode rather than the passive state yin requires.'},
+     solution:['Start with shorter holds (60–90s) and build toward the full 3–5 minutes over weeks','Use slow counted breathing as an anchor instead of watching the clock','Reduce the pose\'s depth slightly — restlessness is often a response to too much sensation, not too little time']},
+  ],
+  hiit:[
+    {id:'burpees', name:'Burpees', tag:'Full body',
+     brainRole:'Coordinating a fast multi-step movement under fatigue is highly brain-demanding — form breaks down here first, before the muscles fail.',
+     heartRole:'One of the fastest heart-rate spikes of any HIIT move — expect it to climb hard within a few reps.',
+     problem:{title:'Form falls apart after a few reps', why:'Brain-driven coordination degrades faster than the muscles do, so speed outpaces control.'},
+     solution:['Step back into the plank instead of jumping when fatigued','Slow the tempo slightly rather than dropping reps','Shorten the work interval and keep intensity high instead']},
+    {id:'kb-swing', name:'Kettlebell swings', tag:'Posterior chain / power',
+     brainRole:'The hip-hinge pattern relies on a strong brain-to-glute signal; when that signal fades, the lower back takes over instead.',
+     heartRole:'Heart strain builds quickly and steadily across a set, similar to a short sprint.',
+     problem:{title:'Lower back feels it instead of the glutes/hamstrings', why:'The movement has turned into a squat-and-lift rather than a hip hinge, usually from fatigue or rushing the tempo.'},
+     solution:['Reset with a few slow, deliberate hinges before speeding up','Cue "hips back" rather than "swing the arms"','Reduce weight until the hinge pattern stays clean under fatigue']},
+    {id:'jump-squat', name:'Jump squats', tag:'Lower body power',
+     brainRole:'Explosive output depends on fresh nervous-system drive — this move fatigues brain-to-muscle signaling fast.',
+     heartRole:'Heart rate rises sharply; landing mechanics also depend on the heart delivering oxygen fast enough to legs already under load.',
+     problem:{title:'Jump height drops off quickly', why:'Nervous-system fatigue is limiting power output before the legs are actually out of strength.'},
+     solution:['Keep sets short (6–10 reps) so quality stays high','Rest fully between sets rather than rushing the next round','Swap to bodyweight squats once jump height clearly drops']},
+    {id:'battle-ropes', name:'Battle ropes', tag:'Upper body / conditioning',
+     brainRole:'Rapid alternating arm patterns need continuous brain coordination, which is why form (not just arms) tires quickly.',
+     heartRole:'Heart rate climbs fast and stays high — one of the more cardiovascular-dominant HIIT moves.',
+     problem:{title:'Waves get small and sloppy fast', why:'Shoulders are doing isolated small movements instead of using the legs and core to drive the wave.'},
+     solution:['Bend the knees and use a slight squat rhythm to drive the wave','Shorten intervals to 15–20s if waves collapse earlier than that','Keep shoulders down away from the ears throughout']},
+    {id:'box-jump', name:'Box jumps', tag:'Explosive power',
+     brainRole:'Landing safely requires quick brain-driven joint control — this degrades noticeably as fatigue builds.',
+     heartRole:'Heart rate spikes per rep with brief recovery between — a stop-start cardiac pattern rather than sustained strain.',
+     problem:{title:'Landings feel heavy or unstable', why:'Coordination fatigue (brain) is arriving before leg strength runs out, raising injury risk on landing.'},
+     solution:['Step down instead of jumping down between reps','Stop the set once landings feel noticeably less controlled','Lower the box height rather than pushing through poor landings']},
+    {id:'mtn-climbers', name:'Mountain climbers', tag:'Core / conditioning',
+     brainRole:'Keeping the core braced while the limbs move fast needs steady brain-to-core signaling that fades under fatigue.',
+     heartRole:'Heart rate rises quickly and sustains — a good marker of true cardiovascular conditioning intensity.',
+     problem:{title:'Hips rise up, lower back rounds', why:'Core bracing has fatigued first, so the hips pike up to compensate and take load off the midline.'},
+     solution:['Slow the pace to restore a flat back before speeding back up','Shorten the interval so form holds for the whole set','Rest the knees on the ground briefly rather than letting hips pike']},
+    {id:'tabata-sprint', name:'Tabata sprints', tag:'Max-effort intervals (20s on / 10s off)',
+     brainRole:'The very short work window forces an all-out effort decision every round — high brain arousal, minimal pacing strategy needed.',
+     heartRole:'Heart strain spikes almost immediately each round and barely has time to drop in the short rest — one of the highest average-strain formats here.',
+     problem:{title:'Later rounds feel identical in effort but output crashes', why:'Ten seconds is not enough recovery once anaerobic capacity is used up, so effort stays maximal while actual power output falls.'},
+     solution:['Cap Tabata blocks at the classic 8 rounds (4 minutes) rather than extending them','Choose a simple movement so form doesn\'t need brain bandwidth you don\'t have','Stop the format (not just the rep) if the 10s rest stops feeling like any recovery at all']},
+    {id:'assault-bike', name:'Assault bike sprints', tag:'Full-body cardio power',
+     brainRole:'Arms and legs driving together demands more coordination than cycling alone, but the sitting position keeps injury-risk decisions simpler than jumping moves.',
+     heartRole:'Very fast heart-rate spikes with fan resistance scaling to effort — harder pushes always cost more strain, unlike a fixed-pace treadmill.',
+     problem:{title:'Legs give out but arms still feel fine (or vice versa)', why:'One half of the body is compensating for the other rather than both driving evenly, usually from muscular fatigue asymmetry.'},
+     solution:['Consciously drive through both arms and legs equally each stroke','Shorten intervals if one side is clearly carrying the other','Alternate arm-only and leg-only short bursts in warm-up to notice imbalance early']},
+    {id:'row-intervals', name:'Rowing intervals', tag:'Full-body / posterior chain',
+     brainRole:'Sequencing legs-back-arms correctly needs real technical focus — this is closer to a skill than a simple cardio push.',
+     heartRole:'Heart strain rises with stroke rate and force together — a common mistake is pulling harder with the arms instead of the legs, which spikes strain without matching power output.',
+     problem:{title:'Lower back tightens before legs or lungs give out', why:'Rowing has become an arm-and-back pull instead of a leg drive, overloading the lower back with every stroke.'},
+     solution:['Cue "legs, then back, then arms" on the drive, and reverse it on the recovery','Lower the stroke rate and focus on power-per-stroke instead of speed','Shorten intervals until the leg-drive sequence holds up for the whole piece']},
+    {id:'plyo-lunge', name:'Plyometric (jump) lunges', tag:'Unilateral lower body power',
+     brainRole:'Balancing single-leg landings under fatigue is one of the higher brain-coordination demands in this list.',
+     heartRole:'Heart rate rises sharply and stays elevated due to the continuous single-leg loading.',
+     problem:{title:'Landings feel wobbly or knees cave inward', why:'Single-leg stability control (a brain-driven skill) is fatiguing faster than the leg muscles themselves.'},
+     solution:['Slow down to alternating reverse lunges once wobbling starts, rather than pushing through jumps','Keep the front knee tracking over the toes on every landing, even when tired','Shorten sets to preserve landing quality over rep count']},
+  ],
+  hybrid:[
+    {id:'ski-erg', name:'SkiErg', tag:'Full-body pulling power (station training)',
+     brainRole:'A new pulling pattern for most people — early sessions need real conscious coordination between the hip hinge and the arm pull.',
+     heartRole:'Heart strain climbs quickly since it engages both upper body and posterior chain at once, similar to rowing but more upper-body dominant.',
+     problem:{title:'Arms burn out long before legs or lungs do', why:'The movement has become an arm-pulldown instead of using the hips to initiate the pull, overloading the smaller arm muscles.'},
+     solution:['Initiate every pull from the hips folding forward, not the arms','Keep the pace moderate on the first station of a hybrid session — this one punishes an early sprint','Shorten work bouts if grip or arms fatigue faster than the rest of the body']},
+    {id:'sled-push', name:'Sled push', tag:'Lower body power (station training)',
+     brainRole:'A simple movement pattern, but full-effort pushing under fatigue tests how well the brain keeps torso and leg drive coordinated when everything wants to round forward.',
+     heartRole:'One of the highest heart-strain spikes of any station — near-maximal effort against constant resistance with nowhere to ease off mid-push.',
+     problem:{title:'Upper back rounds and steps get short and choppy', why:'Leg drive is fatiguing, so the torso is compensating by leaning and pushing with the arms instead of the legs.'},
+     solution:['Keep the chest up and hips low rather than folding over the sled','Take slightly shorter, faster steps instead of long, straining ones','Break the push into shorter efforts with brief resets rather than one long grind']},
+    {id:'sled-pull', name:'Sled pull (rope or harness)', tag:'Posterior chain (station training)',
+     brainRole:'Pulling backward or hand-over-hand needs a different motor pattern than pushing — brain fatigue here often shows as sloppy hand positioning rather than muscular failure.',
+     heartRole:'Heart strain builds steadily rather than spiking — a sustained-effort station rather than an explosive one.',
+     problem:{title:'Lower back does the work instead of legs and lats', why:'Pulling with a rounded back and straight legs rather than a strong leg drive with each pull.'},
+     solution:['Sit back into the pull like a partial squat with each rep','Keep the spine neutral and let the legs, not the back, generate force','Shorten the distance per set if form breaks down before the target distance']},
+    {id:'farmers-carry', name:'Farmer\'s carry', tag:'Grip + full-body stability (station training)',
+     brainRole:'Requires continuous brain-driven bracing through the whole body to keep posture upright under an off-balancing load.',
+     heartRole:'Heart strain rises from the isometric full-body tension as much as from the walking itself.',
+     problem:{title:'Shoulders shrug up and gait gets uneven', why:'Grip or shoulder stability is fatiguing before the legs, so the body compensates by hiking the shoulders and shortening stride.'},
+     solution:['Keep shoulders pulled down and back, not up toward the ears','Take normal-length steps rather than rushing into a shuffle','Set the weight down and reset grip rather than fighting through a failing grip']},
+    {id:'wall-ball', name:'Wall balls', tag:'Full-body power + conditioning (station training)',
+     brainRole:'Combining a squat with a throw and catch under fatigue is a genuinely complex coordination task — this is where technique failure shows up first.',
+     heartRole:'Heart strain climbs fast since it\'s a full-body movement performed at high rep count with almost no rest between reps.',
+     problem:{title:'Ball keeps missing the target or the catch gets messy', why:'Brain-driven timing between the squat drive and the throw is degrading before the legs or shoulders are actually out of strength.'},
+     solution:['Slow the tempo slightly to resync the squat-to-throw timing','Aim for a slightly lower target height temporarily if accuracy keeps slipping','Break a long set into smaller sets with brief holds rather than forcing through sloppy reps']},
+    {id:'burpee-broad-jump', name:'Burpee broad jumps', tag:'Full-body power + distance (station training)',
+     brainRole:'Combines the coordination demand of a burpee with a distance-judgment task on the jump — a lot of simultaneous brain-driven decisions per rep.',
+     heartRole:'One of the highest combined heart-strain movements in hybrid formats, similar to burpees but with added landing demand.',
+     problem:{title:'Jump distance shrinks and landings get rougher', why:'Coordination fatigue is limiting jump quality before leg strength is actually the limiter.'},
+     solution:['Switch to a burpee with a step-forward instead of a jump once distance clearly drops','Land with soft knees and pause briefly before the next rep rather than rushing','Track total distance covered rather than rep count to keep quality honest']},
+    {id:'brick-workout', name:'Brick workout (e.g. bike-to-run or lift-to-row)', tag:'Cross-modal endurance (station training)',
+     brainRole:'Switching physical systems (cycling legs to running legs, or heavy lifting to fast cardio) forces the brain to re-adapt motor patterns mid-session, which is mentally taxing in its own right.',
+     heartRole:'Heart rate often spikes right at the transition between disciplines, even if effort feels similar — this is a well-known effect in multi-sport training.',
+     problem:{title:'Legs feel heavy and clumsy right after the transition', why:'Blood flow and muscle recruitment patterns are still adjusting from the previous discipline — a normal, temporary effect, not a sign of an injury.'},
+     solution:['Practice the transition itself, not just each discipline separately','Ease into the first minute or two of the new discipline rather than attacking it at full pace','Give the transition effect 3–5 minutes to fade before judging how the session is actually going']},
+  ],
+  general:[
+    {id:'full-body-circuit', name:'Full-body circuit', tag:'Strength + conditioning',
+     brainRole:'Switching between different movement patterns station to station keeps brain engagement high throughout.',
+     heartRole:'Heart strain rises in waves as strength and cardio-style stations alternate — expect it to stay moderately elevated the whole circuit.',
+     problem:{title:'Later stations feel much harder than earlier ones', why:'Heart strain from earlier stations hasn\'t cleared before the next one starts, so fatigue compounds faster than expected.'},
+     solution:['Add 15–20s extra rest between stations','Reorder so the most demanding stations aren\'t back-to-back','Track heart level between stations and don\'t start the next until it settles']},
+    {id:'cardio-machine', name:'Cardio machine session', tag:'Steady-state cardio',
+     brainRole:'Lower cognitive demand — mental fatigue here mostly comes from boredom or pacing decisions, not the movement itself.',
+     heartRole:'Heart level should sit in a steady, predictable range for the whole session, matching the resistance/speed you\'ve set.',
+     problem:{title:'Heart rate keeps rising at the same setting', why:'Cardiac drift, often from heat, dehydration, or accumulated fatigue from previous sessions this week.'},
+     solution:['Lower resistance/speed slightly to bring heart rate back in range','Hydrate before and during longer sessions','Check whether this session is too soon after a hard one earlier in the week']},
+    {id:'functional-kb', name:'Functional / kettlebell training', tag:'Mixed strength',
+     brainRole:'Compound, multi-joint movements need continuous whole-body coordination — brain load is higher than isolated machine work.',
+     heartRole:'Heart strain varies a lot by movement — expect swings and carries to spike it more than presses or holds.',
+     problem:{title:'Coordination breaks down mid-session', why:'Brain-driven coordination fatigues before the target muscles are fully worked, especially on complex or new movements.'},
+     solution:['Practice new movement patterns early in the session while fresh','Lower load on complex lifts before lowering load on simple ones','Break complex movements into their parts if form keeps slipping']},
+    {id:'core-stability', name:'Core & stability work', tag:'Trunk / balance',
+     brainRole:'Stability work relies on constant small brain corrections — similar demand to balance-based yoga poses.',
+     heartRole:'Heart strain should stay low to moderate; a spike usually means bracing or breath-holding, not real cardiovascular effort.',
+     problem:{title:'Shaking or losing form quickly', why:'Breath is being held to brace, which spikes heart strain and speeds up fatigue rather than helping stability.'},
+     solution:['Exhale steadily through the hardest part of each hold','Shorten hold times and build duration gradually','Regress to an easier variation if shaking starts within a few seconds']},
+    {id:'mobility-cooldown', name:'Mobility & stretching cooldown', tag:'Recovery',
+     brainRole:'This is where the brain should shift toward the same calming state yoga\'s Savasana targets — a deliberate down-regulation after training.',
+     heartRole:'Heart level should drop steadily throughout; if it doesn\'t, the body is still carrying strain from the main session.',
+     problem:{title:'Heart rate stays elevated well after finishing', why:'The main session was harder than the current fitness level fully recovers from within the same day.'},
+     solution:['Extend the cooldown with slow breathing for a few extra minutes','Hydrate and eat something with the next meal sooner rather than later','Plan an easier session or rest day next, rather than repeating the same intensity']},
+    {id:'beginner-fullbody', name:'Beginner full-body day', tag:'Getting started',
+     brainRole:'New movement patterns demand high conscious brain focus at first — this fades naturally as technique becomes automatic with practice.',
+     heartRole:'Heart level often rises faster than expected early on, simply because the body isn\'t yet efficient at these new movements.',
+     problem:{title:'Gassed out much faster than expected', why:'Inefficient movement patterns cost more heart strain per rep than they will once technique improves.'},
+     solution:['Use lighter loads and focus entirely on technique for the first few sessions','Add extra rest between exercises while patterns are still new','Expect heart strain to drop naturally over 2–3 weeks as movements become efficient']},
+    {id:'cycling', name:'Cycling / spin class', tag:'Lower-body cardio',
+     brainRole:'Following instructor-led pace and resistance changes in a spin class adds a pacing/attention demand beyond the pedaling itself.',
+     heartRole:'Heart strain tracks resistance and cadence closely — it\'s one of the more directly controllable heart-strain activities on this list.',
+     problem:{title:'Legs burn out before heart rate feels "hard"', why:'Resistance is set too high for the cadence, turning it into a strength-endurance grind rather than a cardio session.'},
+     solution:['Lower resistance and raise cadence instead of grinding a hard gear','Stand periodically to change muscle recruitment and relieve the burn','Match effort to breathing, not just to what the class is doing']},
+    {id:'stair-climb', name:'Stair climbing', tag:'Lower-body cardio + power',
+     brainRole:'Constant step-height and foot-placement judgment (especially on a stair machine or real stairs) keeps mild brain engagement throughout.',
+     heartRole:'Heart strain rises quickly and stays high — one of the more demanding steady-state cardio options for the effort it feels like.',
+     problem:{title:'Heart rate spikes far more than the pace seems to justify', why:'Vertical climbing costs more cardiovascular effort per minute than flat walking or running at a similar perceived pace.'},
+     solution:['Judge stair-climbing effort by heart level, not by the pace number on a machine','Take breaks by slowing rather than stopping completely, to keep the session flowing','Build up climbing duration gradually rather than matching flat-cardio session lengths right away']},
+    {id:'dance-fitness', name:'Dance / aerobics class', tag:'Rhythm-based cardio',
+     brainRole:'Learning and following choreography under time pressure is a real cognitive load, especially in the first few classes of a new routine.',
+     heartRole:'Heart strain rises and falls with the music\'s tempo and intensity, giving a naturally interval-like cardio pattern.',
+     problem:{title:'Mentally exhausted before the body feels tired', why:'Brain load from tracking choreography is outpacing physical fatigue, which is normal in early sessions of a new class.'},
+     solution:['Simplify your own footwork (smaller steps, skip the arm choreography) while learning the routine','Position near the back or side until the sequence becomes familiar','Expect the mental load to drop sharply after a few repeats of the same class or routine']},
+  ],
+};
+
+function statusFor(v){ return v<35?'Calm':v<60?'Elevated':v<80?'High':'Critical'; }
+function statusColorHex(v){ return v<35?JS_COLORS.teal:v<60?JS_COLORS.amber:v<80?'#E8793C':JS_COLORS.heart; }
+function stageFor(brain,heart,minute,cortisol){
+  if(minute<=1) return 'warmup';
+  const c = cortisol===undefined ? 0 : cortisol;
+  const idx = brain*0.4 + heart*0.4 + c*0.2;
+  if(idx>=78) return 'risk';
+  if(idx>=55) return 'effort';
+  return 'optimal';
+}
+function cortisolStatus(v){ return v<30?'Balanced':v<55?'Rising':v<75?'Elevated':'Chronically high'; }
+function cortisolColorHex(v){ return v<30?JS_COLORS.teal:v<55?JS_COLORS.amber:v<75?'#E8793C':JS_COLORS.heart; }
+
+/* ---------------- creative chart helpers (pure SVG, no library) ---------------- */
+const JS_COLORS = {brain:'#9B87F5', heart:'#F2637A', teal:'#33C793', amber:'#E3A23C'};
+
+function hashSeed(str){ let h=0; for(let i=0;i<str.length;i++){ h = Math.imul(31,h) + str.charCodeAt(i) | 0; } return Math.abs(h); }
+function seededCurve(seed, n){
+  const arr = [];
+  for(let i=0;i<n;i++){
+    let x = Math.sin(seed*0.017 + i*12.9898) * 43758.5453;
+    x = x - Math.floor(x);
+    arr.push(Math.round(18 + x*72));
+  }
+  return arr;
+}
+function sparkPathFromValues(values, w, h){
+  const n = values.length-1;
+  return values.map((v,i)=>`${((i/n)*w).toFixed(1)},${(h-(v/100)*h).toFixed(1)}`).join(' ');
+}
+
+function svgRadar(labels, values, colorHex, size){
+  size = size||190;
+  const n = labels.length, cx=size/2, cy=size/2, r=size/2-30;
+  const ptAt = (i,frac)=>{ const a=(Math.PI*2*i/n)-Math.PI/2; return [cx+r*frac*Math.cos(a), cy+r*frac*Math.sin(a)]; };
+  const rings = [0.33,0.66,1].map(f=>`<polygon points="${labels.map((_,i)=>ptAt(i,f).join(',')).join(' ')}" fill="none" stroke="var(--border)" stroke-width="1"/>`).join('');
+  const spokes = labels.map((_,i)=>{ const p=ptAt(i,1); return `<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`; }).join('');
+  const poly = values.map((v,i)=>ptAt(i,Math.max(0.06,v/100)).map(n=>n.toFixed(1)).join(',')).join(' ');
+  const labelEls = labels.map((l,i)=>{ const p=ptAt(i,1.22); return `<text x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" font-size="9.5" fill="var(--text-dim)" text-anchor="middle" dominant-baseline="middle" font-family="Inter">${l}</text>`; }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${rings}${spokes}<polygon points="${poly}" fill="${colorHex}33" stroke="${colorHex}" stroke-width="2"/>${labelEls}</svg>`;
+}
+function svgRing(percent, colorHex, size, label){
+  size = size||128; const strokeW=11; const r=size/2-strokeW;
+  const c=2*Math.PI*r; const dash=c*(Math.max(0,Math.min(100,percent))/100);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--surface-3)" stroke-width="${strokeW}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${colorHex}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${dash.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="${size/2}" y="${size/2+3}" font-size="21" font-weight="600" fill="var(--text)" text-anchor="middle" font-family="Space Grotesk">${Math.round(percent)}%</text>
+    ${label?`<text x="${size/2}" y="${size/2+19}" font-size="9" fill="var(--text-faint)" text-anchor="middle" font-family="Inter">${label}</text>`:''}
+  </svg>`;
+}
+function svgDecayBars(values, colorHex){
+  const w=280,h=92; const gap=w/values.length; const bw=gap*0.56;
+  const bars = values.map((v,i)=>{ const bh=(v/100)*h; const x=i*gap+(gap-bw)/2; const op=(0.4+0.6*(v/100)).toFixed(2);
+    return `<rect x="${x.toFixed(1)}" y="${(h-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="4" fill="${colorHex}" opacity="${op}"/>`; }).join('');
+  return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}">${bars}<line x1="0" y1="${h}" x2="${w}" y2="${h}" stroke="var(--border)" stroke-width="1"/></svg>`;
+}
+function svgDualLine(splits){
+  const w=280,h=92,n=splits.length;
+  const paces = splits.map(s=>s.pace); const maxP=Math.max(...paces), minP=Math.min(...paces);
+  const hrPts = splits.map((s,i)=>`${((i/(n-1))*w).toFixed(1)},${(h-(s.hr/100)*h).toFixed(1)}`).join(' ');
+  const pacePts = splits.map((s,i)=>{ const norm = maxP===minP?0.5:(s.pace-minP)/(maxP-minP); const y = h*0.12 + (1-norm)*h*0.76; return `${((i/(n-1))*w).toFixed(1)},${y.toFixed(1)}`; }).join(' ');
+  return `<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}">
+    <polyline points="${hrPts}" fill="none" stroke="${JS_COLORS.heart}" stroke-width="2.2"/>
+    <polyline points="${pacePts}" fill="none" stroke="${JS_COLORS.teal}" stroke-width="2.2" stroke-dasharray="5 4"/>
+  </svg>`;
+}
+function svgDonut(segments, size){
+  // segments: [{value, colorHex}], values sum to ~100
+  size = size||120; const strokeW=16; const r=size/2-strokeW; const c=2*Math.PI*r;
+  let offset=0;
+  const arcs = segments.map(seg=>{
+    const len = c*(seg.value/100);
+    const el = `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${seg.colorHex}" stroke-width="${strokeW}" stroke-dasharray="${len.toFixed(1)} ${c.toFixed(1)}" stroke-dashoffset="${(-offset).toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>`;
+    offset += len; return el;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}</svg>`;
+}
+
+/* Build category-specific creative data from a session's timeline */
+function buildCategoryExtra(activity, tl){
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  if(activity==='bodybuilding'){
+    const base = ['Biceps','Chest','Back','Legs','Shoulders','Triceps'];
+    const muscles = {};
+    base.forEach((m,i)=>{ muscles[m] = Math.max(20, Math.min(95, Math.round((avgBrain*0.5+avgHeart*0.5) + (seededCurve(hashSeed(m+activity),1)[0]-55)*0.6))); });
+    return {muscles};
+  }
+  if(activity==='running'){
+    const splits = tl.map(([m,b,h],i)=>({pace: +(6.2 - (h/100)*1.6).toFixed(2), hr:h}));
+    return {splits};
+  }
+  if(activity==='swimming'){
+    const splits = tl.map(([m,b,h],i)=>({pace: +(2.4 - (h/100)*0.9).toFixed(2), hr:h}));
+    return {splits};
+  }
+  if(activity==='yoga'){
+    const calmScore = Math.max(5, 100-avgHeart);
+    return {calmScore};
+  }
+  if(activity==='hiit'){
+    const peak = Math.max(...tl.map(r=>r[2]));
+    const intervals = tl.map(([m,b,h])=>Math.round(100 - (peak-h)*0.15 - (h/peak)*10));
+    return {intervals:intervals.map(v=>Math.max(35,Math.min(100,v)))};
+  }
+  if(activity==='hybrid'){
+    const stations = ['SkiErg','Sled push','Sled pull','Farmers carry','Wall balls','Row','Burpee jumps'];
+    const effort = stations.map(s=>Math.max(40, Math.min(100, Math.round((avgHeart*0.5+avgBrain*0.5) + (seededCurve(hashSeed(s+activity),1)[0]-55)*0.5))));
+    return {stations, effort};
+  }
+  // general
+  const stages = tl.map(([m,b,h,c])=>stageFor(b,h,m,c));
+  const counts = {warmup:0,optimal:0,effort:0,risk:0};
+  stages.forEach(s=>counts[s]++);
+  const total = stages.length;
+  return {zones:{warmup:Math.round(counts.warmup/total*100), optimal:Math.round(counts.optimal/total*100), effort:Math.round(counts.effort/total*100), risk:Math.round(counts.risk/total*100)}};
+}
+
+function renderCategoryChart(activity, extra){
+  if(activity==='bodybuilding'){
+    const labels = Object.keys(extra.muscles);
+    const values = Object.values(extra.muscles);
+    return `<div style="display:flex; flex-direction:column; align-items:center;">
+      ${svgRadar(labels, values, JS_COLORS.brain)}
+      <p class="muted" style="text-align:center; margin-top:2px;">Pump map — brain+heart engagement by muscle group this session.</p>
+    </div>`;
+  }
+  if(activity==='running'){
+    return `${svgDualLine(extra.splits)}
+      <div class="zonekey" style="margin-top:6px;"><div class="k"><div class="sw" style="background:${JS_COLORS.heart};"></div>Heart strain</div><div class="k"><div class="sw" style="background:${JS_COLORS.teal};"></div>Pace (dashed, higher = faster)</div></div>`;
+  }
+  if(activity==='swimming'){
+    return `${svgDualLine(extra.splits)}
+      <div class="zonekey" style="margin-top:6px;"><div class="k"><div class="sw" style="background:${JS_COLORS.heart};"></div>Heart strain</div><div class="k"><div class="sw" style="background:${JS_COLORS.teal};"></div>Lap pace (dashed, higher = faster)</div></div>`;
+  }
+  if(activity==='yoga'){
+    return `<div style="display:flex; align-items:center; gap:16px;">
+      ${svgRing(extra.calmScore, JS_COLORS.teal, 128, 'calm reached')}
+      <p class="muted" style="margin:0;">Calm score compares how low your heart strain settled versus the start of the practice. Higher means a deeper parasympathetic shift.</p>
+    </div>`;
+  }
+  if(activity==='hiit'){
+    return `${svgDecayBars(extra.intervals, JS_COLORS.amber)}
+      <p class="muted" style="margin-top:2px;">Power output per interval — the drop-off shows where nervous-system fatigue set in.</p>`;
+  }
+  if(activity==='hybrid'){
+    return `${svgDecayBars(extra.effort, JS_COLORS.brain)}
+      <div class="zonekey" style="margin-top:4px; flex-wrap:wrap;">${extra.stations.map(s=>`<div class="k">${s}</div>`).join('')}</div>
+      <p class="muted" style="margin-top:6px;">Relative effort by station, left to right — the pattern shows which stations cost you the most combined brain+heart load today.</p>`;
+  }
+  const z = extra.zones;
+  return `<div style="display:flex; align-items:center; gap:16px;">
+    ${svgDonut([{value:z.optimal,colorHex:JS_COLORS.teal},{value:z.effort,colorHex:JS_COLORS.amber},{value:z.risk,colorHex:JS_COLORS.heart},{value:z.warmup,colorHex:'#3A473F'}], 120)}
+    <div class="zonekey" style="flex-direction:column; gap:6px; align-items:flex-start;">
+      <div class="k"><div class="sw" style="background:${JS_COLORS.teal};"></div>Optimal ${z.optimal}%</div>
+      <div class="k"><div class="sw" style="background:${JS_COLORS.amber};"></div>High effort ${z.effort}%</div>
+      <div class="k"><div class="sw" style="background:${JS_COLORS.heart};"></div>Risk ${z.risk}%</div>
+      <div class="k"><div class="sw" style="background:#3A473F;"></div>Warm-up ${z.warmup}%</div>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   STATE
+========================================================================= */
+const state = {
+  screen:'consent',
+  consentGiven:false,
+  profile:{activities:['running','hiit'], frequency:3},
+  devices:[
+    {name:'Heart rate strap', status:'connected'},
+    {name:'Wrist motion band', status:'connected'},
+  ],
+  today:{activity:'running'},
+  libraryCat:'bodybuilding',
+  libraryEx:null,
+  historyFilter:'all',
+  bodyProfile:{weight:70, height:172, age:28, sex:'male', activityLevel:'moderate'},
+  sleepHours:7,
+  soreness:{},
+  postActionsChecked:{},
+  foodCuisine:'southIndian',
+  scannerQuery:'',
+  scannerCuisineFilter:'all',
+  scannerSelected:null,
+  cameraOn:false,
+  cameraError:'',
+  session:{active:false, paused:false, name:'', minuteIdx:0},
+  alerts:[],
+  activeAlert:null,
+  recoveryChecked:{},
+  weekLog:[true,true,false,false,false,false,false], // Mon..Sun demo
+  historySessions:[
+    {label:'Mon', activity:'running',      avgBrain:52, avgHeart:58, avgCortisol:56, risk:false, extra:{splits:[{pace:5.4,hr:48},{pace:5.3,hr:55},{pace:5.1,hr:60},{pace:5.0,hr:66},{pace:5.2,hr:62},{pace:4.9,hr:70}]}},
+    {label:'Tue', activity:'hiit',         avgBrain:74, avgHeart:80, avgCortisol:72, risk:true,  extra:{intervals:[97,92,86,78,68,58]}},
+    {label:'Thu', activity:'yoga',         avgBrain:30, avgHeart:22, avgCortisol:20, risk:false, extra:{calmScore:81}},
+    {label:'Fri', activity:'bodybuilding', avgBrain:63, avgHeart:57, avgCortisol:52, risk:false, extra:{muscles:{Biceps:70,Chest:60,Back:75,Legs:50,Shoulders:58,Triceps:65}}},
+    {label:'Sat', activity:'general',      avgBrain:44, avgHeart:40, avgCortisol:33, risk:false, extra:{zones:{warmup:18,optimal:56,effort:21,risk:5}}},
+    {label:'Sun', activity:'hybrid',       avgBrain:68, avgHeart:71, avgCortisol:61, risk:true,  extra:{stations:['SkiErg','Sled push','Sled pull','Farmers carry','Wall balls','Row','Burpee jumps'], effort:[88,95,80,72,90,76,64]}},
+    {label:'Wed', activity:'swimming',     avgBrain:38, avgHeart:46, avgCortisol:35, risk:false, extra:{splits:[{pace:2.1,hr:38},{pace:2.05,hr:44},{pace:2.0,hr:48},{pace:1.95,hr:52},{pace:2.0,hr:50}]}},
+  ],
+  eventLog:[],
+  liveTimer:null,
+};
+
+function logEvent(name, detail){ state.eventLog.unshift({name, detail}); }
+function go(screen){ state.screen = screen; if(screen!=='live') stopLiveTimer(); render(); }
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=> t.classList.remove('show'), 1900);
+}
+
+/* =========================================================================
+   SCREENS
+========================================================================= */
+function screenConsent(){
+  return `
+    <div class="topbar"><h2>Before you start</h2></div>
+    <p class="muted">NeuroPulse Fit reads your heart rate and movement patterns during training to infer your brain load and cardiac strain. It compares everything to your own baseline — never to anyone else's.</p>
+    <div class="card" style="margin:14px 0;">
+      <div class="row-line"><div>
+          <div style="font-size:13.5px;">Heart rate &amp; motion sensors</div>
+          <div class="label">Used to estimate strain and effort</div>
+        </div><div class="toggle ${state.consentGiven?'on':''}" onclick="toggleConsent()"><div class="knob"></div></div></div>
+      <div class="row-line"><div>
+          <div style="font-size:13.5px;">On-device only</div>
+          <div class="label">Your readings never leave this device</div>
+        </div><span class="pill teal">Always on</span></div>
+    </div>
+    <p class="muted" style="font-size:11.5px;">These are inferred wellness signals, not a medical diagnosis. If something feels seriously wrong, stop and seek medical help rather than relying on this app.</p>
+    <div class="btn-row">
+      <button class="btn primary block" ${state.consentGiven?'':'disabled'} onclick="logEvent('consent_confirmed'); go('profile')">Continue ${BTN_ICONS.arrow}</button>
+    </div>`;
+}
+function toggleConsent(){ state.consentGiven = !state.consentGiven; render(); }
+
+function screenProfile(){
+  const acts = state.profile.activities;
+  return `
+    <div class="topbar"><h2>Your training</h2></div>
+    <div class="label" style="margin-bottom:8px;">What do you train? (select all that apply)</div>
+    <div class="chip-grid" style="margin-bottom:18px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${acts.includes(a.id)?'on':''}" onclick="toggleActivity('${a.id}')">${a.emoji} ${a.name}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:8px;">How often per week?</div>
+    <div class="chip-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      ${[2,3,4,5].map(n=>`<div class="chip ${state.profile.frequency===n?'on':''}" onclick="setFrequency(${n})">${n}${n===5?'+':''}x</div>`).join('')}
+    </div>
+    <p class="muted">We'll use this to set realistic baselines and to tell you when a rest day is worth taking.</p>
+    <div class="btn-row">
+      <button class="back" onclick="go('consent')" style="margin-right:auto;">←</button>
+      <button class="btn primary" ${acts.length?'':'disabled'} onclick="go('deviceCheck')">Check devices ${BTN_ICONS.arrow}</button>
+    </div>`;
+}
+function toggleActivity(id){
+  const a = state.profile.activities;
+  const i = a.indexOf(id);
+  if(i>-1) a.splice(i,1); else a.push(id);
+  render();
+}
+function setFrequency(n){ state.profile.frequency = n; render(); }
+
+function screenDeviceCheck(){
+  const labelFor = s=>({connected:'Connected', weak:'Weak signal', disconnected:'Disconnected'}[s]);
+  const iconFor = s=>s==='connected'?'teal':s==='weak'?'amber':'heart';
+  return `
+    <div class="topbar"><h2>Device check</h2></div>
+    <p class="muted">Confirm your sensors before starting. A heart rate strap or watch gives the most reliable reading.</p>
+    <div class="card" style="margin-top:6px;">
+      ${state.devices.map((d,i)=>`
+        <div class="row-line">
+          <div style="display:flex; align-items:center; gap:10px;"><div class="dot ${iconFor(d.status)}"></div>
+            <div><div style="font-size:13.5px;">${d.name}</div><div class="label">${labelFor(d.status)}</div></div></div>
+          ${d.status!=='connected'?`<button class="btn ghost" style="padding:6px 10px; font-size:12px;" onclick="retryDevice(${i})">${BTN_ICONS.refresh} Retry</button>`:''}
+        </div>`).join('')}
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('profile')" style="margin-right:auto;">←</button>
+      <button class="btn primary" onclick="go('sessionSetup')">Continue ${BTN_ICONS.arrow}</button>
+    </div>`;
+}
+function retryDevice(i){ state.devices[i].status='connected'; render(); }
+
+function screenSessionSetup(){
+  const acts = ACTIVITIES.filter(a=>state.profile.activities.includes(a.id));
+  return `
+    <div class="topbar"><h2>Start a session</h2></div>
+    <div class="label" style="margin-bottom:8px;">Today I'm training</div>
+    <div class="chip-grid" style="grid-template-columns:1fr; gap:8px; margin-bottom:16px;">
+      ${acts.map(a=>`<div class="chip ${state.today.activity===a.id?'on':''}" style="text-align:left; padding:12px 14px; display:flex; align-items:center; gap:10px;" onclick="state.today.activity='${a.id}'; render();">
+        <span style="font-size:20px;">${a.emoji}</span>
+        <div><div style="font-weight:500;">${a.name}</div><div class="label" style="margin-top:2px;">${a.hint}</div></div></div>`).join('')}
+    </div>
+    <p class="muted">Your brain and heart thresholds will be tuned to this activity — a heart rate that's a red flag in yoga can be completely normal in HIIT.</p>
+    <div class="card" style="cursor:pointer; margin-bottom:6px;" onclick="openLibraryCategory(state.today.activity); go('library')">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><div style="font-size:13px; font-weight:500;">View workouts &amp; technique guide</div><div class="label">See the moves, positions and fixes for this activity</div></div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="back" onclick="go('deviceCheck')" style="margin-right:auto;">←</button>
+      <button class="btn primary" onclick="startSession()">${BTN_ICONS.play} Start training</button>
+    </div>`;
+}
+function startSession(){
+  const a = ACTIVITIES.find(a=>a.id===state.today.activity);
+  state.session = {active:true, paused:false, name:a.name, minuteIdx:0};
+  state.alerts = [];
+  state.recoveryChecked = {};
+  logEvent('session_started', a.name);
+  go('live');
+}
+
+function currentReading(){
+  const tl = TIMELINES[state.today.activity];
+  const i = Math.min(state.session.minuteIdx, tl.length-1);
+  const [minute, brain, heart, cortisol] = tl[i];
+  return {minute, brain, heart, cortisol, isLast:i===tl.length-1};
+}
+
+function maybeRaiseAlert(){
+  const {brain,heart,minute,cortisol} = currentReading();
+  const stage = stageFor(brain,heart,minute,cortisol);
+  if(stage==='risk' && !state.alerts.some(a=>!a.dismissed)){
+    const p = RISK_PROFILE[state.today.activity];
+    const id = 'a'+Date.now();
+    const cortisolNote = cortisol>=75 ? ' Cortisol is also elevated and tends to stay high longer than heart rate does, so plan recovery for after this feeling passes, not just until it does.' : '';
+    state.alerts.push({
+      id, ramp: p.trigger==='brain'?'brain':'heart',
+      metricLabel: p.trigger==='brain'?'Brain load':p.trigger==='heart'?'Heart strain':'Brain load & heart strain',
+      brain, heart, cortisol, why:p.why+cortisolNote, recs:p.recs, read:false, dismissed:false,
+    });
+    logEvent('risk_alert_raised', state.today.activity);
+    showToast('New alert — overreaching risk detected');
+  }
+}
+
+function startLiveTimer(){
+  stopLiveTimer();
+  state.liveTimer = setInterval(()=>{
+    if(!state.session.active || state.session.paused) return;
+    const tl = TIMELINES[state.today.activity];
+    if(state.session.minuteIdx < tl.length-1) state.session.minuteIdx++;
+    maybeRaiseAlert();
+    render();
+  }, 2200);
+}
+function stopLiveTimer(){ if(state.liveTimer){ clearInterval(state.liveTimer); state.liveTimer=null; } }
+
+function screenLive(){
+  const {brain,heart,cortisol,minute,isLast} = currentReading();
+  const stage = stageFor(brain,heart,minute,cortisol);
+  const meta = STAGE_META[stage];
+  const activeAlerts = state.alerts.filter(a=>!a.dismissed);
+  const cColor = cortisolColorHex(cortisol);
+  return `
+    <div class="topbar">
+      <h2>${state.session.name || 'Live session'}</h2>
+      <button class="btn ghost" style="padding:6px 12px; font-size:12px;" onclick="togglePause()">${state.session.paused?BTN_ICONS.play:BTN_ICONS.pause}${state.session.paused?'Resume':'Pause'}</button>
+    </div>
+    ${state.session.paused?`<div class="banner" style="background:var(--surface-2); color:var(--text-dim);">Paused — signal not updating.</div>`:''}
+    <div class="stage-banner ${meta.cls}">
+      <div class="stage-dot"></div>
+      <div><div class="stage-title">${meta.label}</div><div class="stage-sub">${meta.sub}</div></div>
+    </div>
+    <div class="gauge-grid">
+      <div class="gauge brain" style="border-color:${statusColorHex(brain)}40; box-shadow:0 0 0 1px ${statusColorHex(brain)}22, 0 0 18px ${statusColorHex(brain)}1f;">
+        <div class="g-head"><div class="g-dot"></div><div class="g-label">Brain level</div></div>
+        <div class="g-num">${brain}</div>
+        <div class="g-status" style="color:${statusColorHex(brain)};">${statusFor(brain)}</div>
+        <div class="g-bar"><div class="fill" style="width:${brain}%; background:${statusColorHex(brain)};"></div></div>
+      </div>
+      <div class="gauge heart" style="border-color:${statusColorHex(heart)}40; box-shadow:0 0 0 1px ${statusColorHex(heart)}22, 0 0 18px ${statusColorHex(heart)}1f;">
+        <div class="g-head"><div class="g-dot"></div><div class="g-label">Heart level</div></div>
+        <div class="g-num">${heart}</div>
+        <div class="g-status" style="color:${statusColorHex(heart)};">${statusFor(heart)}</div>
+        <div class="g-bar"><div class="fill" style="width:${heart}%; background:${statusColorHex(heart)};"></div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:12px; border-color:${cColor}40; box-shadow:0 0 0 1px ${cColor}22, 0 0 18px ${cColor}1f;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <div style="display:flex; align-items:center; gap:6px;"><div style="width:7px; height:7px; border-radius:50%; background:${cColor};"></div><div class="label">Cortisol (stress hormone)</div></div>
+        <div style="font-size:15px; font-weight:600; color:${cColor};">${cortisol}</div>
+      </div>
+      <div class="g-status" style="color:${cColor}; margin-bottom:6px;">${cortisolStatus(cortisol)}</div>
+      <div class="g-bar"><div class="fill" style="width:${cortisol}%; background:${cColor};"></div></div>
+      <p class="muted" style="margin:8px 0 0;">${cortisol>=75?'Normal to rise during hard effort — but it clears slower than heart rate, so treat this as a signal to prioritize recovery after, not just to push through now.':cortisol>=55?'Rising as expected with effort — nothing to act on yet.':'Within a calm, balanced range.'}</p>
+    </div>
+    <div class="card signal-card">
+      <div class="label" style="margin-bottom:6px;">Minute ${minute} · tap to see today's activity</div>
+      <svg width="100%" height="42" viewBox="0 0 300 42">
+        <polyline points="${sparkPoints(state.today.activity,'brain')}" fill="none" stroke="var(--brain)" stroke-width="2"/>
+        <polyline points="${sparkPoints(state.today.activity,'heart')}" fill="none" stroke="var(--heart)" stroke-width="2"/>
+        <polyline points="${sparkPoints(state.today.activity,'cortisol')}" fill="none" stroke="${JS_COLORS.amber}" stroke-width="2" stroke-dasharray="3 3"/>
+      </svg>
+      <div class="zonekey" style="margin-top:6px;"><div class="k"><div class="sw" style="background:var(--brain);"></div>Brain</div><div class="k"><div class="sw" style="background:var(--heart);"></div>Heart</div><div class="k"><div class="sw" style="background:${JS_COLORS.amber};"></div>Cortisol</div></div>
+    </div>
+    <div class="label" style="margin:14px 0 8px;">Alerts</div>
+    ${activeAlerts.length===0?`<p class="muted">No active alerts — signals within your normal range.</p>`:activeAlerts.map(a=>`
+      <div class="alert-item ${a.ramp}" onclick="openAlert('${a.id}')">
+        <span>${a.metricLabel} rising — possible overreaching</span>
+        <span class="x" onclick="event.stopPropagation(); dismissAlert('${a.id}')">✕</span>
+      </div>`).join('')}
+    ${isLast?`<p class="muted" style="margin-top:6px;">End of this session's data.</p>`:''}
+    <div class="btn-row" style="padding-top:0;">
+      <button class="btn danger block" onclick="endSession()">${BTN_ICONS.stop} End session</button>
+    </div>`;
+}
+function sparkPoints(activity, key){
+  const tl = TIMELINES[activity];
+  const n = tl.length-1;
+  return tl.map((row,i)=>{
+    const v = key==='brain'?row[1]:key==='heart'?row[2]:row[3];
+    const x = (i/n)*300;
+    const y = 40 - (v/100)*36;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+}
+function togglePause(){ state.session.paused=!state.session.paused; logEvent(state.session.paused?'session_paused':'session_resumed'); render(); }
+function dismissAlert(id){ const a=state.alerts.find(a=>a.id===id); a.dismissed=true; showToast('Alert dismissed'); render(); }
+function openAlert(id){ state.activeAlert=id; const a=state.alerts.find(a=>a.id===id); a.read=true; go('alertExplain'); }
+
+function screenAlertExplain(){
+  const a = state.alerts.find(a=>a.id===state.activeAlert) || state.alerts[state.alerts.length-1];
+  if(!a) return `<div class="topbar"><button class="back" onclick="go('live')">←</button><h2>Alert</h2></div><p class="muted">No alert selected.</p>`;
+  return `
+    <div class="topbar"><button class="back" onclick="go('live')">←</button><h2>Why this fired</h2></div>
+    <div class="card" style="background:var(--${a.ramp}-dim); border-color:transparent; margin-bottom:14px;">
+      <div class="label" style="color:inherit; opacity:.85;">${a.metricLabel}</div>
+      <div style="font-size:14px; font-weight:600; margin-top:4px;">Overreaching risk detected</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">What we saw</div>
+    <p class="muted" style="margin-top:0;">${a.why}</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 16px;">
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Brain level</div><div style="font-size:15px; font-weight:600; margin-top:4px; color:var(--brain);">${a.brain}</div></div>
+      <div class="metric" style="text-align:center; padding:10px 6px;"><div class="label">Heart level</div><div style="font-size:15px; font-weight:600; margin-top:4px; color:var(--heart);">${a.heart}</div></div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">What to do now</div>
+    <div class="card" style="margin-bottom:6px;">
+      ${a.recs.map(k=>{
+        const r = RECOVERY_LIBRARY[k];
+        const done = !!state.recoveryChecked[a.id+'_'+k];
+        return `<div class="recovery-item">
+          <div class="check ${done?'done':''}" onclick="toggleRecovery('${a.id}','${k}')">${done?'✓':''}</div>
+          <div><div style="${done?'color:var(--text-dim); text-decoration:line-through;':''}">${r.title}</div><div class="label" style="margin-top:2px;">${r.detail}</div></div>
+        </div>`;
+      }).join('')}
+    </div>
+    <p class="muted" style="font-size:11px;">This is an inferred signal from your own baseline, not a medical diagnosis. If you feel chest pain, dizziness, or breathlessness beyond normal effort, stop training and seek medical care.</p>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="dismissAlert('${a.id}'); go('live')">Dismiss</button>
+      <button class="btn primary" onclick="go('live')">${BTN_ICONS.arrow} Back to session</button>
+    </div>`;
+}
+function toggleRecovery(alertId,key){
+  const k = alertId+'_'+key;
+  state.recoveryChecked[k] = !state.recoveryChecked[k];
+  if(state.recoveryChecked[k]) logEvent('recovery_action_logged', key);
+  render();
+}
+
+function endSession(){
+  stopLiveTimer();
+  logEvent('session_ended', state.today.activity);
+  state.session.active = false;
+  const tl = TIMELINES[state.today.activity];
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  const avgCortisol = Math.round(tl.reduce((s,r)=>s+r[3],0)/tl.length);
+  const extra = buildCategoryExtra(state.today.activity, tl);
+  state.historySessions.unshift({label:'Today', activity:state.today.activity, avgBrain, avgHeart, avgCortisol, risk: state.alerts.length>0, extra});
+  const dow = new Date().getDay(); // 0 sun .. 6 sat -> map to Mon..Sun index
+  const idx = dow===0?6:dow-1;
+  state.weekLog[idx] = true;
+  go('summary');
+}
+
+function screenSummary(){
+  const tl = TIMELINES[state.today.activity];
+  const stages = tl.map(([m,b,h,c])=>stageFor(b,h,m,c));
+  const counts = {warmup:0,optimal:0,effort:0,risk:0};
+  stages.forEach(s=>counts[s]++);
+  const total = stages.length;
+  const colors = {warmup:'var(--surface-3)', optimal:'var(--teal)', effort:'var(--amber)', risk:'var(--heart)'};
+  const avgBrain = Math.round(tl.reduce((s,r)=>s+r[1],0)/tl.length);
+  const avgHeart = Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  const avgCortisol = Math.round(tl.reduce((s,r)=>s+r[3],0)/tl.length);
+  const doneCount = state.weekLog.filter(Boolean).length;
+  const recoveryLogged = Object.values(state.recoveryChecked).filter(Boolean).length;
+  const riskHappened = state.alerts.length>0;
+  const catExtra = buildCategoryExtra(state.today.activity, tl);
+  return `
+    <div class="topbar"><h2>Session summary</h2></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-size:15px; font-weight:600; text-transform:capitalize;">${state.today.activity.replace('bodybuilding','Bodybuilding')}</div>
+      <div class="label" style="margin-top:2px;">Ended ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · avg brain ${avgBrain} · avg heart ${avgHeart} · avg cortisol ${avgCortisol}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">Time in each stage</div>
+    <div class="zonebar">${Object.keys(counts).map(k=>`<span style="width:${(counts[k]/total*100).toFixed(0)}%; background:${colors[k]};"></span>`).join('')}</div>
+    <div class="zonekey" style="margin-bottom:14px;">
+      ${Object.keys(STAGE_META).map(k=>`<div class="k"><div class="sw" style="background:${colors[k]};"></div>${STAGE_META[k].label}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">This session's signature</div>
+    <div class="card" style="margin-bottom:14px;">${renderCategoryChart(state.today.activity, catExtra)}</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="stat-row"><span>Risk alerts</span><span>${state.alerts.length}</span></div>
+      <div class="stat-row"><span>Recovery actions logged</span><span>${recoveryLogged}</span></div>
+      <div class="stat-row"><span>Cortisol (avg)</span><span style="color:${cortisolColorHex(avgCortisol)};">${avgCortisol} · ${cortisolStatus(avgCortisol)}</span></div>
+    </div>
+    ${avgCortisol>=70?`<div class="banner" style="background:var(--amber-dim); color:var(--amber);">Cortisol ran high this session and clears more slowly than heart rate — give tonight's recovery extra weight, even if you feel physically fine right now.</div>`:''}
+    ${riskHappened?`<div class="banner">⚠ Overreaching was detected this session — consider an easier session or full rest next time before training ${state.today.activity} again.</div>`:`<div class="banner" style="background:var(--teal-dim); color:var(--teal);">Session stayed within your normal working range.</div>`}
+    <div class="card" style="cursor:pointer; margin-bottom:14px;" onclick="go('recover')">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><div style="font-size:13px; font-weight:500;">See your recovery &amp; nutrition plan</div><div class="label">Sleep target, soreness check, and what to eat next</div></div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">This week (goal: ${state.profile.frequency}x)</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="muted">${doneCount} of ${state.profile.frequency} sessions logged</div>
+      <div class="weekgoal">${state.weekLog.map(d=>`<div class="d ${d?'on':''}"></div>`).join('')}</div>
+    </div>
+    <div class="btn-row"><button class="btn primary block" onclick="go('sessionSetup')">${BTN_ICONS.play} Start another session</button></div>`;
+}
+
+function screenHistory(){
+  const filter = state.historyFilter;
+  const allSessions = state.historySessions.slice(0,8);
+  const sessions = filter==='all' ? allSessions : allSessions.filter(s=>s.activity===filter);
+  const filterChips = [{id:'all',name:'All',emoji:'📊'}, ...ACTIVITIES];
+  const latestForFilter = filter!=='all' ? sessions[0] : null;
+
+  return `
+    <div class="topbar"><h2>History</h2></div>
+    <div class="chip-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:14px;">
+      ${filterChips.map(c=>`<div class="chip ${filter===c.id?'on':''}" onclick="setHistoryFilter('${c.id}')">${c.emoji} ${c.name}</div>`).join('')}
+    </div>
+    ${filter==='all' ? `
+      <p class="muted" style="margin-bottom:10px;">Brain and heart average per session, most recent first.</p>
+      <div class="card" style="margin-bottom:16px;">
+        <svg width="100%" height="120" viewBox="0 0 300 120">
+          ${allSessions.map((s,i)=>{
+            const gap = 300/allSessions.length; const x = i*gap + gap*0.28; const w = gap*0.2;
+            const hB = (s.avgBrain/100)*100; const hH=(s.avgHeart/100)*100;
+            return `<rect x="${x}" y="${110-hB}" width="${w}" height="${hB}" fill="var(--brain)" rx="2"/>
+                    <rect x="${x+w+3}" y="${110-hH}" width="${w}" height="${hH}" fill="var(--heart)" rx="2"/>`;
+          }).join('')}
+          <line x1="0" y1="110" x2="300" y2="110" stroke="var(--border)" stroke-width="1"/>
+        </svg>
+        <div style="display:flex; justify-content:space-around; margin-top:4px;">
+          ${allSessions.map(s=>`<span class="label">${s.label}</span>`).join('')}
+        </div>
+        <div class="zonekey" style="margin-top:8px;"><div class="k"><div class="sw" style="background:var(--brain);"></div>Brain</div><div class="k"><div class="sw" style="background:var(--heart);"></div>Heart</div></div>
+      </div>` : `
+      <p class="muted" style="margin-bottom:10px; text-transform:capitalize;">${filter} — latest session signature (${latestForFilter?latestForFilter.label:'no sessions yet'})</p>
+      <div class="card" style="margin-bottom:16px;">
+        ${latestForFilter ? renderCategoryChart(filter, latestForFilter.extra) : `<p class="muted">Complete a ${filter} session to see its chart here.</p>`}
+      </div>`}
+    <div class="label" style="margin-bottom:6px;">Sessions</div>
+    ${sessions.length===0?`<p class="muted">No sessions logged yet for this filter.</p>`:sessions.map(s=>`
+      <div class="row-line">
+        <div><div style="font-size:13.5px; text-transform:capitalize;">${s.activity}</div><div class="label">${s.label} · brain ${s.avgBrain} · heart ${s.avgHeart}</div></div>
+        ${s.risk?'<span class="pill heart">Risk flagged</span>':'<span class="pill teal">Within range</span>'}
+      </div>`).join('')}
+    <p class="muted" style="margin-top:14px;">Training ${state.profile.activities.length} activity type${state.profile.activities.length===1?'':'s'} at a goal of ${state.profile.frequency}x/week. Consistent easy sessions between hard ones tend to reduce how often risk alerts fire.</p>`;
+}
+function setHistoryFilter(id){ state.historyFilter = id; render(); }
+
+function screenLibrary(){
+  const cat = state.libraryCat;
+  const list = EXERCISE_LIBRARY[cat];
+  return `
+    <div class="topbar"><h2>Workout &amp; position library</h2></div>
+    <div class="chip-grid" style="margin-bottom:14px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${cat===a.id?'on':''}" onclick="openLibraryCategory('${a.id}')">${a.emoji} ${a.name}</div>`).join('')}
+    </div>
+    <p class="muted" style="margin-bottom:10px;">Tap any move to see why it's meant to feel the way it does, and what to do when it doesn't.</p>
+    ${list.map(ex=>`
+      <div class="player-row row-line" style="cursor:pointer;" onclick="openExercise('${ex.id}')">
+        <div style="flex:1;">
+          <div style="font-size:13.5px;">${ex.name}</div>
+          <div class="label">${ex.tag}</div>
+        </div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>`).join('')}`;
+}
+function openLibraryCategory(id){ state.libraryCat = id; render(); }
+function openExercise(id){ state.libraryEx = id; go('exerciseDetail'); }
+
+function screenExerciseDetail(){
+  const list = EXERCISE_LIBRARY[state.libraryCat];
+  const ex = list.find(e=>e.id===state.libraryEx) || list[0];
+  return `
+    <div class="topbar"><button class="back" onclick="go('library')">←</button><h2>${ex.name}</h2></div>
+    <span class="pill teal" style="margin-bottom:12px; display:inline-block;">${ex.tag}</span>
+    <div class="card" style="margin:10px 0 14px;">
+      <div class="label" style="margin-bottom:6px;">Typical brain vs heart pattern during this move</div>
+      ${(()=>{ const seed=hashSeed(ex.id); const b=seededCurve(seed,9), h=seededCurve(seed+777,9);
+        return `<svg width="100%" height="60" viewBox="0 0 280 60">
+          <polyline points="${sparkPathFromValues(b,280,56)}" fill="none" stroke="var(--brain)" stroke-width="2"/>
+          <polyline points="${sparkPathFromValues(h,280,56)}" fill="none" stroke="var(--heart)" stroke-width="2"/>
+        </svg>`; })()}
+      <div class="zonekey" style="margin-top:4px;"><div class="k"><div class="sw" style="background:var(--brain);"></div>Brain</div><div class="k"><div class="sw" style="background:var(--heart);"></div>Heart</div></div>
+    </div>
+    <div class="label" style="margin:10px 0 6px;">Why it works</div>
+    <div class="card" style="margin-bottom:10px; border-left:3px solid var(--brain);">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;"><div class="dot brain"></div><div style="font-size:12.5px; font-weight:600; color:var(--brain);">Brain</div></div>
+      <div class="muted" style="margin:0;">${ex.brainRole}</div>
+    </div>
+    <div class="card" style="margin-bottom:14px; border-left:3px solid var(--heart);">
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:5px;"><div class="dot heart"></div><div style="font-size:12.5px; font-weight:600; color:var(--heart);">Heart</div></div>
+      <div class="muted" style="margin:0;">${ex.heartRole}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">When it's not working</div>
+    <div class="card" style="background:var(--amber-dim); border-color:transparent; margin-bottom:14px;">
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">${ex.problem.title}</div>
+      <div class="muted" style="margin:0; color:#e4c896;">${ex.problem.why}</div>
+    </div>
+    <div class="label" style="margin-bottom:6px;">How to fix it</div>
+    <div class="card" style="margin-bottom:6px;">
+      ${ex.solution.map(s=>`<div class="recovery-item"><div class="check" style="border-color:var(--teal);"></div><div>${s}</div></div>`).join('')}
+    </div>
+    <div class="btn-row"><button class="btn primary block" onclick="go('library')">Back to library</button></div>`;
+}
+
+function lastCompletedSession(){
+  return state.historySessions[0] || null;
+}
+function setSoreness(muscle, level){ state.soreness[muscle] = level; render(); }
+function updateBodyProfile(field, value){
+  const num = ['weight','height','age'].includes(field);
+  state.bodyProfile[field] = num ? Math.max(1, +value || state.bodyProfile[field]) : value;
+  render();
+}
+function updateSleepHours(value){
+  state.sleepHours = Math.max(0, Math.min(14, +value || 0));
+  render();
+}
+function togglePostAction(key){
+  state.postActionsChecked[key] = !state.postActionsChecked[key];
+  render();
+}
+function setFoodCuisine(id){ state.foodCuisine = id; render(); }
+
+/* ---------------- food scanner ---------------- */
+let cameraStream = null;
+function openScanner(){
+  state.scannerQuery = '';
+  state.scannerCuisineFilter = 'all';
+  state.scannerSelected = null;
+  go('scanner');
+}
+async function startCamera(){
+  state.cameraError = '';
+  try{
+    cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+    state.cameraOn = true;
+  }catch(e){
+    state.cameraOn = false;
+    state.cameraError = 'Camera isn\'t available here — search for the food below instead.';
+  }
+  render();
+}
+function stopCamera(){
+  if(cameraStream){ cameraStream.getTracks().forEach(t=>t.stop()); cameraStream = null; }
+  state.cameraOn = false;
+}
+function toggleCamera(){ state.cameraOn ? (stopCamera(), render()) : startCamera(); }
+function setScannerQuery(v){ state.scannerQuery = v; render(); }
+function setScannerCuisineFilter(id){ state.scannerCuisineFilter = id; render(); }
+function selectScanFood(cuisineId, foodId){
+  state.scannerSelected = {cuisineId, foodId};
+  go('scanResult');
+}
+
+function screenScanner(){
+  let results = searchFoodDatabase(state.scannerQuery);
+  if(state.scannerCuisineFilter!=='all') results = results.filter(f=>f.cuisineId===state.scannerCuisineFilter);
+  const filterChips = [{id:'all', name:'All', emoji:'🔎'}, ...FOOD_CUISINES];
+  return `
+    <div class="topbar"><button class="back" onclick="go('recover')">←</button><h2>Scan a food</h2></div>
+    <div class="card" style="margin-bottom:12px; text-align:center;">
+      ${state.cameraOn ? `
+        <video id="scannerVideo" autoplay playsinline style="width:100%; border-radius:10px; background:#000; max-height:220px; object-fit:cover;"></video>
+        <p class="muted" style="margin:8px 0 0;">Point at your food, then find and confirm it below — matching what's on camera to the closest entry gives a more reliable read than automatic recognition.</p>
+        <button class="btn ghost block" style="margin-top:10px;" onclick="toggleCamera()">${BTN_ICONS.stop} Stop camera</button>
+      ` : `
+        <div style="padding:18px 0;">
+          <div style="font-size:32px; margin-bottom:6px;">📷</div>
+          <p class="muted" style="margin:0 0 10px;">Open your camera to look at the food while you search, or just search below.</p>
+          <button class="btn primary block" onclick="toggleCamera()">${BTN_ICONS.play} Open camera</button>
+          ${state.cameraError?`<p class="muted" style="color:var(--amber); margin-top:8px;">${state.cameraError}</p>`:''}
+        </div>
+      `}
+    </div>
+    <input type="text" placeholder="Search a food (e.g. biryani, egg, pizza)" value="${state.scannerQuery}" onchange="setScannerQuery(this.value)"
+      style="width:100%; margin-bottom:10px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:12px; color:var(--text); padding:12px 14px; font-size:14px;">
+    <div class="chip-grid" style="grid-template-columns:repeat(3,1fr); margin-bottom:12px;">
+      ${filterChips.map(c=>`<div class="chip ${state.scannerCuisineFilter===c.id?'on':''}" onclick="setScannerCuisineFilter('${c.id}')">${c.emoji} ${c.name}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">${results.length} result${results.length===1?'':'s'}</div>
+    ${results.length===0?`<p class="muted">No matches — try a different search term.</p>`:results.map(f=>`
+      <div class="row-line" style="cursor:pointer;" onclick="selectScanFood('${f.cuisineId}','${f.id}')">
+        <div><div style="font-size:13.5px;">${f.emoji||f.cuisineEmoji} ${f.name}</div><div class="label">${f.cuisineName} · ${f.per100.kcal} kcal/100g</div></div>
+        <span style="color:var(--text-faint);">›</span>
+      </div>`).join('')}
+    <p class="muted" style="font-size:11px; margin-top:14px;">This scanner matches you to a food from a reference list rather than reading the photo directly — a full camera-based food recognizer needs a connected vision service, which this offline app doesn't have.</p>`;
+}
+
+function screenScanResult(){
+  if(!state.scannerSelected) return `<div class="topbar"><button class="back" onclick="go('scanner')">←</button><h2>Scan result</h2></div><p class="muted">No food selected.</p>`;
+  const dish = FOOD_DISHES[state.scannerSelected.cuisineId].find(d=>d.id===state.scannerSelected.foodId);
+  const cuisine = FOOD_CUISINES.find(c=>c.id===state.scannerSelected.cuisineId);
+  const activity = state.today.activity;
+  const targets = mealTargets(activity);
+  const tdee = computeTDEE(state.bodyProfile);
+  const portion = computeDishPortion(dish, targets, tdee);
+  const fit = fitLabel(portion.scale);
+  const scaleText = portion.scale<1 ? `~${Math.round(portion.scale*100)}% of` : `~${portion.scale.toFixed(1)}×`;
+  const proteinShare = dish.per100.protein*4;
+  const carbShare = dish.per100.carb*4;
+  const fatShare = dish.per100.fat*9;
+  const totalCal = proteinShare+carbShare+fatShare || 1;
+  const proteinPct = Math.round(proteinShare/totalCal*100);
+  let verdict;
+  if(activity==='bodybuilding' || activity==='hiit' || activity==='hybrid'){
+    verdict = proteinPct>=25 ? 'Good match — solid protein relative to calories for muscle repair after this kind of training.' : 'Works, but pair it with an extra protein source (egg, curd, dal, chicken) since this food alone is carb/fat-heavy for today\'s training goal.';
+  } else if(activity==='running' || activity==='swimming'){
+    verdict = dish.per100.carb>=15 ? 'Good match — enough carbohydrate here to help refill what endurance training used up.' : 'Works as a side, but add a carb-rich food alongside it (rice, banana, bread) to fully refuel from today\'s session.';
+  } else if(activity==='yoga'){
+    verdict = dish.per100.kcal<=180 ? 'Good match — light enough to sit well after a calming practice.' : 'A bit heavy for right after yoga — a smaller portion or a lighter pairing keeps the post-practice calm from being undone by digestion.';
+  } else {
+    verdict = 'Reasonable general-purpose food — check the portion below to keep it in line with today\'s activity.';
+  }
+  return `
+    <div class="topbar"><button class="back" onclick="go('scanner')">←</button><h2>${dish.name}</h2></div>
+    <span class="pill teal" style="margin-bottom:10px; display:inline-block;">${cuisine.emoji} ${cuisine.name}</span>
+    <div class="card" style="margin-bottom:12px;">
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">Does this work for you today?</div>
+      <p class="muted" style="margin:0;">${verdict}</p>
+    </div>
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
+        <div class="label">Typical serving: ${dish.serving.desc}</div>
+        <span class="pill ${fit.cls}">${fit.text}</span>
+      </div>
+      <div style="font-size:14px; font-weight:600; margin-bottom:2px;">Your portion: ~${portion.grams}g <span class="label" style="font-weight:400;">(${scaleText} a typical serving)</span></div>
+      <div class="label">${portion.kcal} kcal · P ${portion.protein}g · C ${portion.carb}g · F ${portion.fat}g</div>
+    </div>
+    <p class="muted" style="margin-bottom:14px;">${dish.note}</p>
+    ${dish.costTier && dish.costTier!=='budget' ? `
+    <div class="label" style="margin-bottom:6px;">Can't get this, or it's out of budget?</div>
+    <div class="card" style="margin-bottom:14px;">
+      ${(dish.swaps&&dish.swaps.length) ? dish.swaps.map(s=>`
+        <div class="recovery-item"><div class="check" style="border-color:var(--teal);"></div>
+          <div><div>${s.name}</div><div class="label" style="margin-top:2px;">${s.reason}</div></div>
+        </div>`).join('') : `<p class="muted" style="margin:0;">Check the "Budget staples" tab in the scanner for widely affordable swaps (eggs, milk, curd, dal, rice, oats, peanuts) that cover the same protein/carb role.</p>`}
+    </div>` : `
+    <div class="banner" style="background:var(--teal-dim); color:var(--teal); margin-bottom:14px;">This is already an affordable, widely available option — no swap needed.</div>`}
+    <div class="btn-row"><button class="btn primary block" onclick="go('scanner')">${BTN_ICONS.arrow} Scan another food</button></div>`;
+}
+
+
+function screenRecover(){
+  const last = lastCompletedSession();
+  const activity = last ? last.activity : state.today.activity;
+  const score = computeRecoveryScore(last);
+  const tier = recoveryTier(score);
+  const sleepTarget = recommendedSleep(last);
+  const tl = TIMELINES[activity];
+  const durationMin = tl[tl.length-1][0] + 4;
+  const avgHeart = last ? last.avgHeart : Math.round(tl.reduce((s,r)=>s+r[2],0)/tl.length);
+  const burn = computeCalorieBurn(activity, durationMin, avgHeart);
+  const tdee = computeTDEE(state.bodyProfile);
+  const proteinG = Math.round(state.bodyProfile.weight * PROTEIN_G_PER_KG[activity]);
+  const carbG = Math.round(state.bodyProfile.weight * CARB_G_PER_KG[activity]);
+  const postActions = POST_WORKOUT_LIBRARY[activity];
+  const soreMuscles = SORENESS_GROUPS.filter(m=>state.soreness[m]==='sore');
+  const mildMuscles = SORENESS_GROUPS.filter(m=>state.soreness[m]==='mild');
+
+  return `
+    <div class="topbar"><h2>Recovery &amp; nutrition</h2></div>
+    <p class="muted" style="margin-bottom:12px;">Based on your last session${last?` (${last.label.toLowerCase()==='today'?'today':last.label} · ${activity})`:''}, today's soreness, and last night's sleep.</p>
+
+    <div class="card" style="margin-bottom:14px; display:flex; align-items:center; gap:16px;">
+      ${svgRing(score, JS_COLORS[tier.cls==='teal'?'teal':tier.cls==='amber'?'amber':'heart'], 108, tier.label)}
+      <div style="flex:1;">
+        <span class="pill ${tier.cls}">${tier.label} to train</span>
+        <p class="muted" style="margin:8px 0 0;">${tier.note}</p>
+      </div>
+    </div>
+
+    ${last ? `
+    <div class="card" style="margin-bottom:14px; border-color:${cortisolColorHex(last.avgCortisol||0)}40;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div class="label">Cortisol from that session</div>
+        <div style="font-weight:600; color:${cortisolColorHex(last.avgCortisol||0)};">${last.avgCortisol||0} · ${cortisolStatus(last.avgCortisol||0)}</div>
+      </div>
+      <p class="muted" style="margin:0;">${(last.avgCortisol||0)>=60?'Cortisol clears more slowly than heart rate does — this is factored into your sleep target and readiness score above, even if you feel fine right now.':'Stayed in a manageable range — not a major factor in tonight\'s recovery need.'}</p>
+    </div>` : ''}
+
+    <div class="label" style="margin-bottom:6px;">What else your body is managing</div>
+    <div class="card" style="margin-bottom:14px;">
+      ${BODY_SIGNALS.map(sig=>`
+        <div class="row-line" style="align-items:flex-start;">
+          <div style="font-size:18px; margin-top:1px;">${sig.emoji}</div>
+          <div style="flex:1; margin-left:10px;">
+            <div style="font-size:13px; font-weight:600;">${sig.name}</div>
+            <div class="muted" style="margin:2px 0 4px;">${sig.role}</div>
+            <div class="label">${sig.tip}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+
+    <div class="label" style="margin-bottom:6px;">How sore are you?</div>
+    <div class="card" style="margin-bottom:14px;">
+      ${SORENESS_GROUPS.map(m=>`
+        <div class="row-line">
+          <div style="font-size:13px;">${m}</div>
+          <div style="display:flex; gap:6px;">
+            ${SORENESS_LEVELS.map(lv=>`<div class="chip ${state.soreness[m]===lv.id?'on':''}" style="padding:6px 10px; font-size:11.5px;" onclick="setSoreness('${m}','${lv.id}')">${lv.label}</div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>
+    ${(soreMuscles.length||mildMuscles.length) ? `
+    <div class="banner" style="background:var(--amber-dim); color:#e8c98a;">
+      ${soreMuscles.length?`${soreMuscles.join(', ')} sore — likely normal DOMS from recent training (peaks 24–72h after). Favor light movement, not heavy loading, on these today.`:`${mildMuscles.join(', ')} a little tight — light stretching should ease it.`}
+      ${soreMuscles.length?" If it's sharp, joint-level pain rather than muscle soreness, that's worth checking with a professional rather than pushing through.":''}
+    </div>`:''}
+
+    <div class="label" style="margin-bottom:6px;">Tonight's sleep target</div>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><div style="font-size:19px; font-weight:600;">${sleepTarget.low}–${sleepTarget.high}h</div><div class="label">recommended after this training load</div></div>
+        <div style="text-align:right;">
+          <div class="label">Logged last night</div>
+          <input type="number" min="0" max="14" step="0.5" value="${state.sleepHours}" onchange="updateSleepHours(this.value)"
+            style="width:64px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:6px 8px; font-size:14px; text-align:center;">
+        </div>
+      </div>
+    </div>
+
+    <div class="label" style="margin-bottom:6px; text-transform:capitalize;">After ${activity} — what to do</div>
+    <div class="card" style="margin-bottom:14px;">
+      ${postActions.map(a=>{ const done=!!state.postActionsChecked[a.id];
+        return `<div class="recovery-item">
+          <div class="check ${done?'done':''}" onclick="togglePostAction('${a.id}')">${done?BTN_ICONS.check:''}</div>
+          <div><div style="${done?'color:var(--text-dim); text-decoration:line-through;':''}">${a.title}</div><div class="label" style="margin-top:2px;">${a.detail}</div></div>
+        </div>`; }).join('')}
+    </div>
+
+    <div class="label" style="margin-bottom:6px;">Fuel up</div>
+    <div class="metric-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="metric"><div class="label">Estimated burn</div><div class="num">${burn} kcal</div></div>
+      <div class="metric"><div class="label">Daily need (TDEE)</div><div class="num">${tdee} kcal</div></div>
+      <div class="metric"><div class="label">Protein target</div><div class="num">${proteinG} g</div></div>
+      <div class="metric"><div class="label">Carb target</div><div class="num">${carbG} g</div></div>
+    </div>
+    <p class="muted" style="margin:8px 0 4px;">Rough estimates from your body profile below and this session's intensity — not a medical or clinical calculation.</p>
+    <div class="card" style="margin-bottom:6px;">
+      <div class="label" style="margin-bottom:8px;">Your body profile</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+        <label class="label">Weight (kg)<br><input type="number" value="${state.bodyProfile.weight}" onchange="updateBodyProfile('weight',this.value)" style="width:100%; margin-top:4px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:8px; font-size:13px;"></label>
+        <label class="label">Height (cm)<br><input type="number" value="${state.bodyProfile.height}" onchange="updateBodyProfile('height',this.value)" style="width:100%; margin-top:4px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:8px; font-size:13px;"></label>
+        <label class="label">Age<br><input type="number" value="${state.bodyProfile.age}" onchange="updateBodyProfile('age',this.value)" style="width:100%; margin-top:4px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:8px; font-size:13px;"></label>
+        <label class="label">Sex<br>
+          <select onchange="updateBodyProfile('sex',this.value)" style="width:100%; margin-top:4px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
+            <option value="male" ${state.bodyProfile.sex==='male'?'selected':''}>Male</option>
+            <option value="female" ${state.bodyProfile.sex==='female'?'selected':''}>Female</option>
+          </select>
+        </label>
+      </div>
+      <label class="label">Daily activity outside training<br>
+        <select onchange="updateBodyProfile('activityLevel',this.value)" style="width:100%; margin-top:4px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:8px; color:var(--text); padding:8px; font-size:13px;">
+          <option value="sedentary" ${state.bodyProfile.activityLevel==='sedentary'?'selected':''}>Mostly sitting</option>
+          <option value="light" ${state.bodyProfile.activityLevel==='light'?'selected':''}>Lightly active</option>
+          <option value="moderate" ${state.bodyProfile.activityLevel==='moderate'?'selected':''}>Moderately active</option>
+          <option value="active" ${state.bodyProfile.activityLevel==='active'?'selected':''}>Active</option>
+          <option value="veryactive" ${state.bodyProfile.activityLevel==='veryactive'?'selected':''}>Very active</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="label" style="margin:14px 0 6px;">Everyday food ideas</div>
+    <div class="card" style="margin-bottom:6px;">
+      <div class="label" style="margin-bottom:6px; color:var(--brain);">Protein</div>
+      <div class="chip-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:12px;">${FOOD_LIBRARY.protein.map(f=>`<div class="chip">${f}</div>`).join('')}</div>
+      <div class="label" style="margin-bottom:6px; color:var(--amber);">Carbohydrates</div>
+      <div class="chip-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:12px;">${FOOD_LIBRARY.carbs.map(f=>`<div class="chip">${f}</div>`).join('')}</div>
+      <div class="label" style="margin-bottom:6px; color:var(--blue);">Hydration</div>
+      <div class="chip-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:12px;">${FOOD_LIBRARY.hydration.map(f=>`<div class="chip">${f}</div>`).join('')}</div>
+      <div class="label" style="margin-bottom:6px; color:var(--heart);">Healthy fats</div>
+      <div class="chip-grid" style="grid-template-columns:repeat(2,1fr);">${FOOD_LIBRARY.fats.map(f=>`<div class="chip">${f}</div>`).join('')}</div>
+    </div>
+
+    <div class="card" style="cursor:pointer; margin-bottom:14px; background:var(--teal-dim); border-color:transparent;" onclick="openScanner()">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div><div style="font-size:13px; font-weight:600; color:var(--teal);">📷 Scan a food</div><div class="label">Check if it fits, and find affordable swaps if it doesn't</div></div>
+        <span style="color:var(--teal);">›</span>
+      </div>
+    </div>
+
+    <div class="label" style="margin:14px 0 6px;">Real meals, right portions</div>
+    <p class="muted" style="margin-top:0; margin-bottom:10px;">Yes, biryani (or pizza, or butter chicken) can absolutely be part of this — the portion just needs to match your body and today's training, not be skipped.</p>
+    <div class="chip-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:12px;">
+      ${FOOD_CUISINES.map(c=>`<div class="chip ${state.foodCuisine===c.id?'on':''}" onclick="setFoodCuisine('${c.id}')">${c.emoji} ${c.name}</div>`).join('')}
+    </div>
+    ${FOOD_DISHES[state.foodCuisine].map(dish=>{
+      const portion = computeDishPortion(dish, {proteinG, carbG}, tdee);
+      const fit = fitLabel(portion.scale);
+      const scaleText = portion.scale<1 ? `~${Math.round(portion.scale*100)}% of` : `~${portion.scale.toFixed(1)}×`;
+      return `
+      <div class="card" style="margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:6px;">
+          <div>
+            <div style="font-size:13.5px; font-weight:600;">${dish.name}</div>
+            <div class="label" style="margin-top:2px;">Typical serving: ${dish.serving.desc}</div>
+          </div>
+          <span class="pill ${fit.cls}">${fit.text}</span>
+        </div>
+        <div style="font-size:14px; font-weight:600; margin-bottom:2px;">Your portion: ~${portion.grams}g <span class="label" style="font-weight:400;">(${scaleText} a typical serving)</span></div>
+        <div class="label" style="margin-bottom:8px;">${portion.kcal} kcal · P ${portion.protein}g · C ${portion.carb}g · F ${portion.fat}g</div>
+        <div class="muted" style="margin:0;">${dish.note}</div>
+      </div>`;
+    }).join('')}
+    <p class="muted" style="font-size:11px; margin-top:10px;">General nutrition education, not a personalized diet or medical plan. If you have a health condition, allergy, or specific goal, a registered dietitian or doctor can tailor this properly for you.</p>`;
+}
+
+function screenSettings(){
+  const labelFor = s=>({connected:'Connected', weak:'Weak signal', disconnected:'Disconnected'}[s]);
+  return `
+    <div class="topbar"><h2>Settings</h2></div>
+    <div class="label" style="margin-bottom:6px;">Devices</div>
+    <div class="card" style="margin-bottom:16px;">
+      ${state.devices.map(d=>`<div class="row-line"><div style="display:flex; align-items:center; gap:10px;"><div class="dot ${d.status==='connected'?'teal':d.status==='weak'?'amber':'heart'}"></div><div style="font-size:13px;">${d.name}</div></div><span class="label">${labelFor(d.status)}</span></div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Your activities</div>
+    <div class="chip-grid" style="margin-bottom:16px;">
+      ${ACTIVITIES.map(a=>`<div class="chip ${state.profile.activities.includes(a.id)?'on':''}" onclick="toggleActivity('${a.id}')">${a.emoji} ${a.name}</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Weekly goal</div>
+    <div class="chip-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:16px;">
+      ${[2,3,4,5].map(n=>`<div class="chip ${state.profile.frequency===n?'on':''}" onclick="setFrequency(${n})">${n}${n===5?'+':''}x</div>`).join('')}
+    </div>
+    <div class="label" style="margin-bottom:6px;">Data</div>
+    <div class="card"><div class="row-line"><div style="font-size:13px;">Stored on this device only</div><span class="pill teal">Private</span></div></div>`;
+}
+
+/* =========================================================================
+   RENDER
+========================================================================= */
+const SCREENS = {
+  consent: screenConsent, profile: screenProfile, deviceCheck: screenDeviceCheck,
+  sessionSetup: screenSessionSetup, live: screenLive, alertExplain: screenAlertExplain,
+  summary: screenSummary, history: screenHistory, library: screenLibrary,
+  exerciseDetail: screenExerciseDetail, recover: screenRecover, scanner: screenScanner,
+  scanResult: screenScanResult, settings: screenSettings,
+};
+const NAV = [
+  {id:'live', label:'Live', icon:'live', screen:'live'},
+  {id:'library', label:'Library', icon:'library', screen:'library'},
+  {id:'recover', label:'Recover', icon:'recover', screen:'recover'},
+  {id:'history', label:'History', icon:'history', screen:'history'},
+  {id:'settings', label:'Settings', icon:'settings', screen:'settings'},
+];
+const ICONS = {
+  live: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>',
+  library: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5v-17Z"/><path d="M4 19a2.5 2.5 0 0 1 2.5-2.5H20"/></svg>',
+  recover: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>',
+  history: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>',
+  settings: '<svg class="navicon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.3-.9c.5.4 1.1.7 1.7 1L11 21h4l.4-2.9c.6-.3 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.6z"/></svg>',
+};
+function render(){
+  const showNav = ['live','library','recover','history','settings'].includes(state.screen);
+  const screensEl = document.getElementById('screens');
+  screensEl.innerHTML = Object.keys(SCREENS).map(key =>
+    `<div class="screen ${state.screen===key?'active':''}" data-screen="${key}">${SCREENS[key]()}</div>`
+  ).join('');
+  const navbarEl = document.getElementById('navbar');
+  navbarEl.style.display = showNav ? 'flex' : 'none';
+  navbarEl.innerHTML = NAV.map(n => `
+    <div class="navitem ${state.screen===n.screen ? 'active':''}" onclick="go('${n.screen}')">
+      ${ICONS[n.icon]}<span>${n.label}</span>
+    </div>`).join('');
+  if(state.screen==='live' && state.session.active) startLiveTimer(); else stopLiveTimer();
+  if(state.screen==='scanner' && cameraStream){
+    const videoEl = document.getElementById('scannerVideo');
+    if(videoEl) videoEl.srcObject = cameraStream;
+  }
+  if(state.screen!=='scanner' && cameraStream){
+    stopCamera();
+  }
+}
+
+/* =========================================================================
+   MODE SWITCH + FIGMA-STYLE FRAME BOARD
+========================================================================= */
+function setMode(mode){
+  document.getElementById('appWrap').classList.toggle('active', mode==='app');
+  document.getElementById('boardWrap').classList.toggle('active', mode==='board');
+  document.getElementById('modeAppBtn').classList.toggle('active', mode==='app');
+  document.getElementById('modeBoardBtn').classList.toggle('active', mode==='board');
+  if(mode==='board') renderBoard();
+}
+const FRAME_ORDER = [
+  {key:'consent', title:'Consent'},
+  {key:'profile', title:'Your training'},
+  {key:'deviceCheck', title:'Device check'},
+  {key:'sessionSetup', title:'Start a session'},
+  {key:'live', title:'Live — brain & heart'},
+  {key:'alertExplain', title:'Risk & recovery'},
+  {key:'summary', title:'Session summary'},
+  {key:'recover', title:'Recovery & nutrition'},
+  {key:'scanner', title:'Food scanner'},
+  {key:'scanResult', title:'Scan result & swaps'},
+  {key:'library', title:'Workout library'},
+  {key:'exerciseDetail', title:'Move detail — why & fix'},
+  {key:'history', title:'History'},
+  {key:'settings', title:'Settings'},
+];
+function renderBoard(){
+  // build a temporary snapshot state so frames show meaningful demo content
+  const snap = JSON.parse(JSON.stringify(state));
+  snap.profile.activities = ['bodybuilding','running','yoga','hiit','hybrid'];
+  snap.today.activity = 'hiit';
+  snap.session = {active:true, paused:false, name:'HIIT', minuteIdx:5};
+  snap.alerts = [{id:'demo', ramp:'heart', metricLabel:'Brain load & heart strain', brain:88, heart:90, why:RISK_PROFILE.hiit.why, recs:RISK_PROFILE.hiit.recs, read:true, dismissed:false}];
+  snap.activeAlert = 'demo';
+  snap.recoveryChecked = {};
+  snap.consentGiven = true;
+  snap.libraryCat = 'bodybuilding';
+  snap.libraryEx = 'concentration-curl';
+  snap.soreness = {Chest:'sore', Legs:'mild'};
+  snap.sleepHours = 6.5;
+  snap.foodCuisine = 'southIndian';
+  snap.scannerQuery = 'biryani';
+  snap.scannerCuisineFilter = 'all';
+  snap.scannerSelected = {cuisineId:'southIndian', foodId:'biryani-south'};
+  snap.cameraOn = false;
+
+  const oldState = JSON.stringify(state);
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state, snap);
+
+  const canvas = document.getElementById('boardCanvas');
+  canvas.innerHTML = FRAME_ORDER.map((f,i)=>`
+    <div class="frame-col">
+      <div class="frame">
+        <div class="frame-label"><span class="fnum">${String(i+1).padStart(2,'0')}</span> ${f.title}</div>
+        <div class="frame-box">
+          <div class="fake-status"><span>9:41</span><span>●●● 100%</span></div>
+          <div class="screen active">${SCREENS[f.key]()}</div>
+        </div>
+        ${i<FRAME_ORDER.length-1?'<div class="frame-arrow">→</div>':''}
+      </div>
+    </div>`).join('');
+
+  Object.keys(state).forEach(k=>delete state[k]);
+  Object.assign(state, JSON.parse(oldState));
+}
+
+render();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{ /* fine if this file isn't hosted alongside — app still works */ });
+  });
+}
+</script>
+</body>
+</html>
